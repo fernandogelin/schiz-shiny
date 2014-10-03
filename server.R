@@ -154,7 +154,7 @@ shinyServer(function(input, output) {
 		  "Family 53-108" = plot(ped53108, col=ifelse(fam53108$avail, 4, 1), id=id53108),
 		  "Family 56-195" = plot(ped56195, col=ifelse(fam56195$avail, 4, 1), id=id56195),
 		  "Family 70-1088" = plot(ped701088, col=ifelse(fam701088$avail, 4, 1), id=id701088),
-		  "Family 70-1096" = plot(ped701120, col=ifelse(fam701096$avail, 4, 1), id=id701096),
+		  "Family 70-1096" = plot(ped701096, col=ifelse(fam701096$avail, 4, 1), id=id701096),
 		  "Family 70-1120" = plot(ped701120, col=ifelse(fam701120$avail, 4, 1), id=id701120),
 		  "Family 70-1179" = plot(ped701179, col=ifelse(fam701179$avail, 4, 1), id=id701179),
 		  "Family 71-5077" = plot(ped715077, col=ifelse(fam715077$avail, 4, 1), id=id715077)
@@ -163,7 +163,20 @@ shinyServer(function(input, output) {
   output$InfoTable <- renderDataTable({
     library(ggplot2)
     table <- datasetInputInfo()
-    table
+    names(table)[70] = "esp6500_ALL"
+    names(table)[71] = "1000gAug2014_ALL"
+    names(table)[72] = "esp6500_EA"
+    names(table)[73] = "1000gAug2014_EA"
+    names(table)[74] = "esp6500_AA"
+    names(table)[75] = "1000gAug2014_AA"
+    names(table)[79] = "AB"
+    names(table)[80] = "AD"
+    names(table)[81] = "DP"
+    names(table)[82] = "GQ"
+    names(table)[83] = "GT"
+    names(table)[84] = "MQ0"
+    names(table)[85] = "PL"
+    table[,c(-11:-12,-15:-56,-58:-60,-64:-69), with=FALSE]
   })
 	output$plot <- renderPlot({
 		plotInput()

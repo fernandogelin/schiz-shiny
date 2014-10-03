@@ -55,8 +55,9 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 
 
-<div id="data-overview" class="section level2">
-<h2>Data Overview</h2>
+<blockquote>
+<p>Data Overview</p>
+</blockquote>
 <p>The data is composed by whole exome sequences for 70 individuals from 19 families. Eleven of the families are European American, six families are African American and two are Hispanic. From each family two to five individuals were sampled.</p>
 <p><strong>European American</strong></p>
 <ul>
@@ -88,13 +89,13 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </ul>
 <p><em>Family 32-32213 has inbreeding. The mom was excluded from the analysis, leaving us with 4 individuals.</em></p>
 <p><em>Family 31-31115 had only two individuals sequenced. The whole family was excluded from the analysis.</em></p>
-</div>
-<div id="sequencing" class="section level2">
-<h2>Sequencing</h2>
+<blockquote>
+<p>Sequencing</p>
+</blockquote>
 <p>All 70 individuals were submitted to whole exome sequencing either to Axeq <a href="http://www.axeq.com">http://www.axeq.com</a> or Otogenetics <a href="http://www.otogenetics.com">http://www.otogenetics.com</a>. Both companies use Illumina HiSeq 2000 technology with the Agilent SureSelect Target Enrichment System Capture Process.</p>
-</div>
-<div id="data-processing" class="section level2">
-<h2>Data Processing</h2>
+<blockquote>
+<p>Data Processing</p>
+</blockquote>
 <p>The initial steps of data processing involve aligning the raw data to a reference (in our case this reference is the UCSC human genome assembly <code>hg19</code>) using the software <code>BWA</code> which takes a <code>fastq</code> file as the input and returns a <code>SAM</code> file (sequence alignment map format).</p>
 <pre><code>BWA 
 
@@ -269,10 +270,10 @@ do
          -F 1000g2014aug_afr -F snp132 -F snp138 -GF AB -GF AD -GF DP -GF GQ -GF GT -GF MQ0 -GF PL -F set\
          -o $f.table
 done</code></pre>
-</div>
-<div id="data-analysis" class="section level2">
-<h2>Data Analysis</h2>
-<p>Once the raw data is processed we end up with a annotated VCF file. This file contains all variants for each individual. We then use R to analyze the data and extract the information we need. Variants were filtered in order to generate a reduced dataset. For that, we selected only exonic, non-synonymous variants, with frequencies lower than 0.1% in the 1000 genomes and esp6500 databeses, and not present in the snp132 database.</p>
+<blockquote>
+<p>Data Analysis</p>
+</blockquote>
+<p>Once the raw data is processed we end up with a annotated VCF file. This file contains all variants for each individual. We then use R to analyze the data and extract the information we need. Variants were filtered in order to generate a reduced dataset. For that, we selected only exonic, non-synonymous variants, with frequencies lower than 0.1% in the 1000 genomes and esp6500 databases, and not present in the snp132 database.</p>
 <pre><code>library(data.table)
 # Open connection, read files and store in a varible.
 TablefileName=&quot;table_list.txt&quot;
@@ -417,7 +418,6 @@ for (i in 1:length(table_list_ids)) {
   table_add_on &lt;- cbind(table, pseudogenes=as.character(table$GL) %in% pseudogenes, table7=as.character(table$GL) %in% table7)
   assign(file_name, table_add_on, envir=.GlobalEnv)
 }</code></pre>
-</div>
 
 
 </div>
