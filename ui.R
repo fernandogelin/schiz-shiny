@@ -48,9 +48,9 @@ verticalLayout(
 
       tabsetPanel(
 		    tabPanel('Variants', dataTableOutput('InfoTable')),
-		    tabPanel('Summary', tableOutput('summary')),
-		    tabPanel('Family Pedigree', plotOutput("ped")),
-        tabPanel('Venn Diagram', plotOutput("plot")),
+		    tabPanel('Family Pedigree', plotOutput("ped"), p(verbatimTextOutput('relate'))),
+		    tabPanel('Summary', dataTableOutput('summary_all')),
+		    tabPanel('Selected Genes', includeHTML("www/selected_variants.html")),
         tabPanel('Methods', includeHTML("www/schiz-methods.html")),
         tabPanel('Table columns IDs', includeHTML("www/vcf_headings.html"))
     )

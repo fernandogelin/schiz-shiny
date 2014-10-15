@@ -23,9 +23,11 @@ var16 <- readRDS('data/var16.json.rds')
 var17 <- readRDS('data/var17.json.rds')
 var18 <- readRDS('data/var18.json.rds')
 var19 <- readRDS('data/var19.json.rds')
+summary_all <- read.csv("data/summary_all.csv", header=TRUE)
 
 source('data/schizPedigree.R')
-source('data/venn.R') 
+source('data/venn.R')
+
 
 shinyServer(function(input, output) {
   datasetInputInfo <- reactive({
@@ -96,24 +98,24 @@ shinyServer(function(input, output) {
   })
   datasetInputRel <- reactive({
     switch(input$dataset,
-           "Family 30-30134" = 0.0625,
-           "Family 30-30142" = 0.03125,
-           "Family 30-30117" = 0.015625,
-           "Family 30-30135" = 0.0625,
-           "Family 30-30136" = 0.0,
-           "Family 31-31114" = 0.03125,
-           "Family 31-31119" = 0.015625,
-           "Family 32-32213" = 0.5,
-           "Family 44-1053" = 0.0625,
-           "Family 45-1040" = 0.0078125,
-           "Family 49-1002" = 0.09375,
-           "Family 53-108" = 0.015625,
-           "Family 56-195" = 0.015625,
-           "Family 70-1088" = 0.03125,
-           "Family 70-1096" = 0.0625,
-           "Family 70-1120" = 0.00197266,
-           "Family 70-1179" = 0.03125,
-           "Family 71-5077" = 0.03125
+           "Family 30-30134" = relate30134,
+           "Family 30-30142" = relate30142,
+           "Family 30-30117" = relate30117,
+           "Family 30-30135" = relate30135,
+           "Family 30-30136" = relate30136,
+           "Family 31-31114" = relate31114,
+           "Family 31-31119" = relate31119,
+           "Family 32-32213" = relate32213,
+           "Family 44-1053" = relate441053,
+           "Family 45-1040" = relate451040,
+           "Family 49-1002" = relate491002,
+           "Family 53-108" = relate53108,
+           "Family 56-195" = relate56195,
+           "Family 70-1088" = relate701088,
+           "Family 70-1096" = relate701096,
+           "Family 70-1120" = relate701120,
+           "Family 70-1179" = relate701179,
+           "Family 71-5077" = relate715077
     )
   })
   plotInput <- reactive({
@@ -192,5 +194,11 @@ shinyServer(function(input, output) {
   })
   output$summary <- renderTable({
     datasetSummary()
+  })
+  output$summary_all <- renderDataTable({
+    summary_all[,-1]
+  })
+  output$relate <- renderText({ 
+    paste("relatedeness =", datasetInputRel(), sep=" ")
   })
 })

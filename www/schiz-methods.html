@@ -275,6 +275,7 @@ done</code></pre>
 </blockquote>
 <p>Once the raw data is processed we end up with a annotated VCF file. This file contains all variants for each individual. We then use R to analyze the data and extract the information we need. Variants were filtered in order to generate a reduced dataset. For that, we selected only exonic, non-synonymous variants, with frequencies lower than 0.1% in the 1000 genomes and esp6500 databases, and not present in the snp132 database.</p>
 <pre><code>library(data.table)
+library(rjson)
 # Open connection, read files and store in a varible.
 TablefileName=&quot;table_list.txt&quot;
 con=file(TablefileName, open=&quot;r&quot;)
@@ -296,17 +297,6 @@ con=file(varIDfileName, open=&quot;r&quot;)
 variant_IDs=readLines(con)
 close(con)
 
-# Read tables from disk.
-for (i in 1:length(table_list)) {
-    fileName=paste(&quot;data&quot;, as.character(table_list[i]), sep=&quot;/&quot;)
-    print(paste(&quot;Reading table&quot;,fileName,sep=&quot; &quot;))
-    assign(table_list_ids[i], read.table(fileName, header=TRUE), envir=.GlobalEnv)
-}
-
-# Create a list with the variant tag to be used as argument of the by.family() function.
-var_id_list &lt;- paste(&quot;variant&quot;,c(1:19), sep=&quot;&quot;)
-var_id_list[1] &lt;- &quot;variant01&quot;
-
 # Function that takes a variant tag as argument and returns 
 by.family &lt;- function(variantID) {
   variant &lt;- grep(variantID,table_list_ids, fixed=TRUE)
@@ -317,27 +307,60 @@ by.family &lt;- function(variantID) {
   return(variant_file_names)
 }
 
+
+############# 
+############# Step 1 - Read tables into R
+#############
+
+# Read tables from disk.
+for (i in 1:length(table_list)) {
+    fileName=paste(&quot;data&quot;, as.character(table_list[i]), sep=&quot;/&quot;)
+    print(paste(&quot;Reading table&quot;,fileName,sep=&quot; &quot;))
+    assign(table_list_ids[i], read.table(fileName, header=TRUE), envir=.GlobalEnv)
+    assign(paste(table_list_ids[i], &quot;json&quot;, sep=&quot;.&quot;), toJSON(get(table_list_ids[i])), envir=.GlobalEnv)    
+}
+
+############# 
+############# Step 2 - Filter and reduce tables
+#############
+
 # Subset tables based on given filters.
 filter.reduce.tables &lt;- function(fam_id_list) {
   fam_list &lt;- unlist(lapply(unique(fam_id_list), get))
-  print(fam_list)
   # Filter
   reduced_fam_list &lt;- c()
   for (i in 1:length(fam_list)) {
     print(paste(&quot;Reducing table&quot;,fam_list[i],sep=&quot; &quot;))
     exclude_gene_function &lt;- c(&quot;ncRNA_exonic&quot;, &quot;downstream&quot;, &quot;intronic&quot;, &quot;UTR3&quot;, &quot;upstream&quot;, &quot;UTR5&quot;, &quot; ncRNA_intronic&quot;, &quot; ncRNA_UTR3&quot;, &quot; ncRNA_UTR5&quot;, &quot;intergenic&quot;, &quot; ncRNA_splicing&quot;)
     exclude_exonic_function &lt;- c(&quot;0&quot;, &quot;synonymous_SNV&quot;, &quot;unknown&quot;, &quot;nonframeshift_insertion&quot;, &quot;nonframeshift_deletion&quot;, &quot;NA&quot;)
+    
+    filter0 &lt;- as.character(get(fam_list[i])[,83]) != &quot;./.&quot;
+    assign(paste(&quot;real.var&quot;, fam_list[i], sep=&quot;.&quot;), subset(get(fam_list[i]), filter0))
+    
+    varTable &lt;- paste(&quot;real.var&quot;, fam_list[i], sep=&quot;.&quot;)
+    
     # Filter snp132 by NA, 1000g and esp6500 frequencies, gene and exonic functions.
-    filter1 &lt;- is.na(get(fam_list[i])$snp132)
-    filter1b &lt;- is.na(get(fam_list[i])$snp138)
-    filter2 &lt;- get(fam_list[i])$esp6500si_all &lt; 0.01
-    filter3 &lt;- get(fam_list[i])$X1000g2014aug_all &lt; 0.01
-    filter4 &lt;- !(get(fam_list[i])$Func.refGene %in% exclude_gene_function)
-    filter5 &lt;- !(get(fam_list[i])$ExonicFunc.refGene %in% exclude_exonic_function)
-    filter6 &lt;- as.character(get(fam_list[i])[,83]) != &quot;./.&quot;
-    assign(fam_list[i], subset(get(fam_list[i]), filter1 &amp; filter2 &amp; filter3 &amp; filter4 &amp; filter5 &amp; filter6))
+
+    filter4 &lt;- !(get(varTable)$Func.refGene %in% exclude_gene_function)
+    filter5 &lt;- !(get(varTable)$ExonicFunc.refGene %in% exclude_exonic_function)
+    
+    assign(paste(&quot;total&quot;, fam_list[i], sep=&quot;.&quot;), subset(get(varTable), filter4 &amp; filter5), envir=.GlobalEnv)
+    print(paste(i, &quot;Done creating table with all exonic, non-synonymous variants for sample&quot;,fam_list[i],sep=&quot; &quot;))
+    
+    totalvarTable &lt;- paste(&quot;total&quot;, fam_list[i], sep=&quot;.&quot;)
+    
+    filter1 &lt;- is.na(get(totalvarTable)$snp132)
+    filter2 &lt;- get(totalvarTable)$esp6500si_all &lt; 0.01 | is.na(get(totalvarTable)$esp6500si_all)
+    filter3 &lt;- get(totalvarTable)$X1000g2014aug_all &lt; 0.01 | is.na(get(totalvarTable)$X1000g2014aug_all)
+
+    
+    assign(paste(&quot;rare&quot;,fam_list[i], sep=&quot;.&quot;), subset(get(totalvarTable), filter1 &amp; filter2 &amp; filter3, na.rm=FALSE), envir=.GlobalEnv)
+    print(paste(i, &quot;Done creating table with rare variants&quot;,fam_list[i],sep=&quot; &quot;))
+    
+    rareVarTable &lt;- paste(&quot;rare&quot;,fam_list[i], sep=&quot;.&quot;)
+    
     sub &lt;- sub(&quot;(\\d*)(\\w)(\\d*).&quot;, &quot;&quot;, fam_list[i])
-    gt &lt;- strsplit(as.character(get(fam_list[i])[,83]), &quot;/&quot;)
+    gt &lt;- strsplit(as.character(get(rareVarTable)[,83]), &quot;/&quot;)
     filter7 &lt;- c()
     for (j in 1:length(gt)) {
       if (sub == &quot;variant2&quot;) {
@@ -347,10 +370,19 @@ filter.reduce.tables &lt;- function(fam_id_list) {
         filter7 &lt;- c(filter7, unlist(gt[j])[1] != unlist(gt[j])[2])
       }
     }
-    assign(paste(&quot;reduced.&quot;,fam_list[i], sep=&quot;&quot;), subset(get(fam_list[i]), filter7), envir=.GlobalEnv)
-    print(paste(i, &quot;Done reducing table&quot;,fam_list[i],sep=&quot; &quot;))
-    reduced_fam_list &lt;- c(reduced_fam_list, paste(&quot;reduced.&quot;,fam_list[i], sep=&quot;&quot;))
-    assign(paste(&quot;summary&quot;, fam_list[i], sep=&quot;.&quot;), c(total=length(subset(get(fam_list[i]), filter7)), exonic=length(subset(get(fam_list[i]), filter7 &amp; filter4)), &quot;non synonymous&quot;=length(subset(get(fam_list[i]), filter7 &amp; filter4 &amp; filter5)), rare=length(subset(get(fam_list[i]), filter7 &amp; filter4 &amp; filter5 &amp; filter2 &amp; filter3)), private=length(subset(get(fam_list[i]), filter7 &amp; filter4 &amp; filter5 &amp; filter2 &amp; filter3 &amp; filter1 &amp; filter1b))), envir=.GlobalEnv)
+    
+    assign(paste(&quot;rare.z&quot;,fam_list[i], sep=&quot;.&quot;), subset(get(rareVarTable), filter7), envir=.GlobalEnv)
+    print(paste(i, &quot;Done creating table with rare variants, with correct zygozity for sample&quot;,fam_list[i],sep=&quot; &quot;))
+    
+    rareZVarTable &lt;- paste(&quot;rare.z&quot;,fam_list[i], sep=&quot;.&quot;)
+    
+    filter2b &lt;- is.na(get(rareZVarTable)$esp6500si_all)
+    filter3b &lt;- is.na(get(rareZVarTable)$X1000g2014aug_all)
+    
+    assign(paste(&quot;rare.z.private&quot;,fam_list[i], sep=&quot;.&quot;), subset(get(rareZVarTable), filter2b &amp; filter3b, na.rm=FALSE), envir=.GlobalEnv)
+    print(paste(i, &quot;Done creating table with rare private variants for sample&quot;,fam_list[i],sep=&quot; &quot;))
+    reduced_fam_list &lt;- c(reduced_fam_list, paste(&quot;rare.z.private&quot;,fam_list[i], sep=&quot;.&quot;))
+
   }
   # Creates lists with start position and a start_list with ids.
   start_list &lt;- c()
@@ -364,8 +396,13 @@ filter.reduce.tables &lt;- function(fam_id_list) {
 for (i in 1:length(family_IDs)) {
   assign(family_IDs[i],by.family(variant_IDs[i]))
 }
-# Double lapply. Get the family list and apply filter.reduce.tables to each individual from the family
-lapply(family_IDs, filter.reduce.tables)
+# Get the family list and apply filter.reduce.tables to each individual from the family
+filter.reduce.tables(unique(family_IDs))
+
+
+############# 
+############# Step 3 - Find shared variants from the reduced tables
+#############
 
 # Assign &quot;start.reduced.sampleID.varianID&quot; to id_family
 famIDfileName=&quot;familyID.txt&quot;
@@ -386,12 +423,46 @@ for (i in 1:length(family_IDs)) {
 # Subset tables to contain only shared variants.
   # Filter
   for (i in 1:length(table_list_ids)) {
-    filter &lt;- get(paste(&quot;reduced.&quot;, table_list_ids[i], sep=&quot;&quot;))$POS %in% get(paste(&quot;shared.var.&quot;, family_IDs[i], sep=&quot;&quot;))
-    file_name &lt;- paste(&quot;shared.reduced.&quot;,table_list_ids[i], sep=&quot;&quot;)
-    table &lt;- data.table(get(paste(&quot;reduced.&quot;,table_list_ids[i], sep=&quot;&quot;)))
+    filter &lt;- get(paste(&quot;rare.z&quot;, table_list_ids[i], sep=&quot;.&quot;))$POS %in% get(paste(&quot;shared.var.&quot;, family_IDs[i], sep=&quot;&quot;))
+    file_name &lt;- paste(&quot;shared.rare&quot;,table_list_ids[i], sep=&quot;.&quot;)
+    table &lt;- data.table(get(paste(&quot;rare.z&quot;,table_list_ids[i], sep=&quot;.&quot;)))
     shared_reduced_table &lt;- subset(table, filter)
     assign(file_name, shared_reduced_table, envir=.GlobalEnv)
   }
+
+############# 
+############# Step 4 - Extract variants unique for the family
+#############
+
+# Create a list with the variant tag to be used as argument of the by.family() function.
+var_id_list &lt;- paste(&quot;variant&quot;,c(1:19), sep=&quot;&quot;)
+var_id_list[1] &lt;- &quot;variant01&quot;
+
+
+# Subset the tables to contain only those variants exclusive for each family. Argument is a list of individual table ids. This function gives the variants exclusive for each family. Variants that occur in other families are filtered out.
+cat.family.var &lt;- function(table_id) {
+  sub &lt;- sub(&quot;(\\d*)(\\w)(\\d*).&quot;, &quot;&quot;, table_id)
+  print(paste(&quot;Extracting unique variables&quot;,table_id,sep=&quot; &quot;))
+  if (sub == &quot;variant01&quot;) {
+    filter &lt;- get(paste(&quot;shared.rare&quot;, table_id, sep=&quot;.&quot;))$set == &quot;variant&quot;
+  }
+  else {
+    filter &lt;- get(paste(&quot;shared.rare&quot;, table_id, sep=&quot;.&quot;))$set == sub
+  }
+  assign(paste(&quot;unique.var&quot;,table_id, sep=&quot;.&quot;), subset(get(paste(&quot;shared.rare&quot;, table_id, sep=&quot;.&quot;)), filter), envir=.GlobalEnv)
+  print(paste(&quot;Finished extracting unique variables&quot;,table_id,sep=&quot; &quot;))
+}  
+
+
+# Apply the cat.family.var function to the samples in the table_list_ids list.
+lapply(table_list_ids, cat.family.var)
+
+# Creates a list with unique.var file names.
+unique_var_list &lt;- paste(&quot;unique.var.&quot;, table_list_ids, sep=&quot;&quot;)
+
+############# 
+############# Step 5 - Add columns to the tables with info from false positive dataset (Ashok's lists)
+#############
 
 # Add columns with excluded genes logical list.
 fileName=&quot;pseudogenes.txt&quot;
@@ -413,11 +484,148 @@ for (i in 1:length(linn)){
 close(conn)
 
 for (i in 1:length(table_list_ids)) {
-  file_name &lt;- paste(&quot;shared.reduced.added.col.&quot;,table_list_ids[i], sep=&quot;&quot;)
-  table &lt;- data.table(get(paste(&quot;shared.reduced.&quot;,table_list_ids[i], sep=&quot;&quot;)))
+  file_name &lt;- paste(&quot;shared.rare.fp.col.&quot;,table_list_ids[i], sep=&quot;&quot;)
+  table &lt;- data.table(get(paste(&quot;unique.var.&quot;,table_list_ids[i], sep=&quot;&quot;)))
   table_add_on &lt;- cbind(table, pseudogenes=as.character(table$GL) %in% pseudogenes, table7=as.character(table$GL) %in% table7)
   assign(file_name, table_add_on, envir=.GlobalEnv)
-}</code></pre>
+}
+
+
+############# 
+############# Step 6 - Create summary tables
+#############
+
+# Create Summary Tables
+for (i in 1:length(table_list_ids)) {
+  assign(paste(&quot;summary&quot;, table_list_ids[i], sep=&quot;.&quot;), c(total=nrow(subset(get(table_list_ids[i]), as.character(get(table_list_ids[i])[,83]) != &quot;./.&quot;)), rare=length(get(paste(&quot;start.reduced&quot;, table_list_ids[i], sep=&quot;.&quot;))), shared=nrow(get(paste(&quot;unique.var&quot;, table_list_ids[i], sep=&quot;.&quot;))), private=nrow(subset(get(paste(&quot;unique.var&quot;, table_list_ids[i], sep=&quot;.&quot;)), is.na(get(paste(&quot;unique.var&quot;, table_list_ids[i], sep=&quot;.&quot;))$esp6500si_all) &amp; is.na(get(paste(&quot;unique.var&quot;, table_list_ids[i], sep=&quot;.&quot;))$X1000g2014aug_all)))), envir=.GlobalEnv)
+}
+
+for (i in 1:length(family_IDs)) {
+  assign(family_IDs[i],paste(&quot;summary&quot;,by.family(variant_IDs[i]), sep=&quot;.&quot;))
+}
+
+summary_IDs &lt;- unique(family_IDs)
+summary_list &lt;- c()
+for (i in 1:length(summary_IDs)) {
+  family &lt;- get(summary_IDs[i])
+  table &lt;- c()
+  for (j in 1:length(family)) {
+    table &lt;- rbind(table, get(family[j]))
+    assign(paste(&quot;summary.table&quot;, summary_IDs[i], sep=&quot;.&quot;), table)
+    summary_list &lt;- c(summary_list, paste(&quot;summary.table&quot;, summary_IDs[i], sep=&quot;.&quot;))
+    assign(&quot;sum_list&quot;, summary_list)
+  }
+}
+
+############# 
+############# Step 7 - Create list for Venn diagrams 
+#############
+
+# Subset tables based on given filters.
+venn.list &lt;- function(fam_id_list) {
+  fam_list &lt;- unlist(lapply(unique(fam_id_list), get))
+  # Filter
+  reduced_fam_list &lt;- c()
+  for (i in 1:length(fam_list)) {
+    exclude_gene_function &lt;- c(&quot;ncRNA_exonic&quot;, &quot;downstream&quot;, &quot;intronic&quot;, &quot;UTR3&quot;, &quot;upstream&quot;, &quot;UTR5&quot;, &quot; ncRNA_intronic&quot;, &quot; ncRNA_UTR3&quot;, &quot; ncRNA_UTR5&quot;, &quot;intergenic&quot;, &quot; ncRNA_splicing&quot;)
+    exclude_exonic_function &lt;- c(&quot;0&quot;, &quot;synonymous_SNV&quot;, &quot;unknown&quot;, &quot;nonframeshift_insertion&quot;, &quot;nonframeshift_deletion&quot;, &quot;NA&quot;)
+    # Filter snp132 by NA, 1000g and esp6500 frequencies, gene and exonic functions.
+    filter1 &lt;- is.na(get(fam_list[i])$snp132)
+    filter2 &lt;- get(fam_list[i])$esp6500si_all &lt; 0.01 | is.na(get(fam_list[i])$esp6500si_all)
+    filter3 &lt;- get(fam_list[i])$X1000g2014aug_all &lt; 0.01 | is.na(get(fam_list[i])$X1000g2014aug_all)
+
+    filter4 &lt;- !(get(fam_list[i])$Func.refGene %in% exclude_gene_function)
+    filter5 &lt;- !(get(fam_list[i])$ExonicFunc.refGene %in% exclude_exonic_function)
+    filter6 &lt;- as.character(get(fam_list[i])[,83]) != &quot;./.&quot;
+    assign(fam_list[i], subset(get(fam_list[i]), filter1 &amp; filter2 &amp; filter3 &amp; filter4 &amp; filter5 &amp; filter6))
+    sub &lt;- sub(&quot;(\\d*)(\\w)(\\d*).&quot;, &quot;&quot;, fam_list[i])
+    gt &lt;- strsplit(as.character(get(fam_list[i])[,83]), &quot;/&quot;)
+    filter7 &lt;- c()
+    for (j in 1:length(gt)) {
+      if (sub == &quot;variant2&quot;) {
+        filter7 &lt;- c(filter7, unlist(gt[j])[1] == unlist(gt[j])[2])
+      }
+      else {
+        filter7 &lt;- c(filter7, unlist(gt[j])[1] != unlist(gt[j])[2])
+      }
+    }
+    assign(paste(&quot;reduced.unique&quot;,fam_list[i], sep=&quot;.&quot;), subset(get(fam_list[i]), filter7))
+    print(paste(i, &quot;Done creating start list for&quot;,fam_list[i],sep=&quot; &quot;))
+    reduced_fam_list &lt;- c(reduced_fam_list, paste(&quot;reduced.unique&quot;,fam_list[i], sep=&quot;.&quot;))
+  }
+  # Creates lists with start position and a start_list with ids.
+  start_list &lt;- c()
+  for (i in 1:length(reduced_fam_list)) {
+    assign(paste(&quot;start&quot;,reduced_fam_list[i], sep=&quot;.&quot;), get(reduced_fam_list[i])$POS, envir=.GlobalEnv)
+    start_list &lt;- c(start_list, paste(&quot;start&quot;,reduced_fam_list[i], sep=&quot;.&quot;))
+  }
+}
+
+# Assign &quot;sampleID.varianID&quot; to id_family
+for (i in 1:length(family_IDs)) {
+  assign(family_IDs[i],by.family(variant_IDs[i]))
+}
+# Get the family list and apply filter.reduce.tables to each individual from the family
+venn.list(unique(family_IDs))
+
+############# 
+############# Step 7 - Save R Data
+#############
+
+# Save R data
+
+save(summary.table.id_491002,summary.table.id_701096,summary.table.id_715077,summary.table.id_30117,summary.table.id_31119,summary.table.id_30135,summary.table.id_701088,summary.table.id_701120,summary.table.id_31114,summary.table.id_30136,summary.table.id_53108,summary.table.id_30142,summary.table.id_31115,summary.table.id_30134,summary.table.id_56195,summary.table.id_451040,summary.table.id_32213,summary.table.id_441053,summary.table.id_701179, file=&quot;summary.RData&quot;)
+
+# convert to JSON
+var19 &lt;- toJSON(shared.reduced.added.col.00C01655.variant19)
+var4 &lt;- toJSON(shared.reduced.added.col.01C08396.variant4)
+var15 &lt;- toJSON(shared.reduced.added.col.01C09383.variant15)
+var9 &lt;- toJSON(shared.reduced.added.col.02C10243.variant9)
+var13 &lt;- toJSON(shared.reduced.added.col.02C11048.variant13)
+var7 &lt;- toJSON(shared.reduced.added.col.03C13990.variant7)
+var01 &lt;- toJSON(shared.reduced.added.col.03C14816.variant01)
+var10 &lt;- toJSON(shared.reduced.added.col.03C19764.variant10)
+var5 &lt;- toJSON(shared.reduced.added.col.04C30815.variant5)
+var3 &lt;- toJSON(shared.reduced.added.col.04C37691.variant3)
+var16 &lt;- toJSON(shared.reduced.added.col.90C00691.variant16)
+var12 &lt;- toJSON(shared.reduced.added.col.90C01063.variant12)
+var14 &lt;- toJSON(shared.reduced.added.col.90C01235.variant14)
+var2 &lt;- toJSON(shared.reduced.added.col.90C01297.variant2)
+var11 &lt;- toJSON(shared.reduced.added.col.90C01798.variant11)
+var8 &lt;- toJSON(shared.reduced.added.col.90C02936.variant8)
+var18 &lt;- toJSON(shared.reduced.added.col.90C02970.variant18)
+var17 &lt;- toJSON(shared.reduced.added.col.90C02992.variant17)
+var6 &lt;- toJSON(shared.reduced.added.col.90C03310.variant6)
+
+saveRDS(var01, file=&quot;var01.json.rds&quot;)
+saveRDS(var2, file=&quot;var2.json.rds&quot;)
+saveRDS(var3, file=&quot;var3.json.rds&quot;)
+saveRDS(var4, file=&quot;var4.json.rds&quot;)
+saveRDS(var5, file=&quot;var5.json.rds&quot;)
+saveRDS(var6, file=&quot;var6.json.rds&quot;)
+saveRDS(var7, file=&quot;var7.json.rds&quot;)
+saveRDS(var8, file=&quot;var8.json.rds&quot;)
+saveRDS(var9, file=&quot;var9.json.rds&quot;)
+saveRDS(var10, file=&quot;var10.json.rds&quot;)
+saveRDS(var11, file=&quot;var11.json.rds&quot;)
+saveRDS(var12, file=&quot;var12.json.rds&quot;)
+saveRDS(var13, file=&quot;var13.json.rds&quot;)
+saveRDS(var14, file=&quot;var14.json.rds&quot;)
+saveRDS(var15, file=&quot;var15.json.rds&quot;)
+saveRDS(var16, file=&quot;var16.json.rds&quot;)
+saveRDS(var17, file=&quot;var17.json.rds&quot;)
+saveRDS(var18, file=&quot;var18.json.rds&quot;)
+saveRDS(var18, file=&quot;var19.json.rds&quot;)
+
+# Save unique var tables to disk in csv format
+unique_list_ids &lt;- paste(&quot;unique.var&quot;, table_list_ids, sep=&quot;.&quot;)
+
+save.table &lt;- function(table) {
+  write.csv(get(table), file=paste(&quot;data/&quot;, table, &quot;.csv&quot;, sep=&quot;&quot;))
+}
+lapply(unique_list_ids,save.table)
+
+</code></pre>
 
 
 </div>

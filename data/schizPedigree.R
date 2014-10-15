@@ -15,6 +15,8 @@ aff <- data.table(schizophrenia=c(NA,NA,0,1,1,1,1,1,0,0,0), other_mental_disorde
 ped56195 <- pedigree(id=fam56195$id, momid=fam56195$momid, dadid=fam56195$dadid, sex=fam56195$sex, affected=as.matrix(aff))
 id56195 <- paste(fam56195$id, c(" "," ", " ", " ", "04C30815", "04C30824", "04C30822","04C30825", " ", " ", " "), sep="\n")
 plot(ped56195, col=ifelse(fam56195$avail, 4, 1), id=id56195)
+relate56195 <- kinship(ped56195)[5,6] * kinship(ped56195)[5,7] * kinship(ped56195)[5,8] * kinship(ped56195)[6,7] * kinship(ped56195)[6,8] * kinship(ped56195)[7,8] 
+
 
 # Family 30-30117
 fam30117 <- data.table(famid=rep(30117, 19), id=c(10518, 10519, 99996, 10517, 10088, 99995, 10520, 10521, 10102, 10084, 10091, 10095, 10096, 10155, 10116, 10138, 10176, 10527, 10156), dadid=c(0,0,0,0,10518,0,0,0,99996,10517,10517,10517,10517,10517,10517,10520,99995,10520,10521), momid=c(0,0,0,0,10519,0,0,0,10519,10088,10088,10088,10088,10088,10088,10088,10088,10088,10102), sex=c(1,2,1,1,2,1,1,1,2,1,2,1,2,2,1,1,2,1,2), avail=c(rep(0,8),1,1,0,0,0,1,0,1,0,1,0))
@@ -22,24 +24,28 @@ aff30117 <- data.table(schizophrenia=c(0,0,NA,NA,1,NA,0,0,1,1,0,0,0,1,0,1,0,0,0)
 ped30117 <- pedigree(id=fam30117$id, momid=fam30117$momid, dadid=fam30117$dadid, sex=fam30117$sex, affected=as.matrix(aff30117))
 id30117 <- paste(fam30117$id, c(rep(" ",8), "90C00789", "90C00691", " ", " ", " ", "90C00866", " ", "90C00990", " ", " ", " "), sep="\n")
 plot(ped30117, col=ifelse(fam30117$avail, 4, 1), id=id30117)
+relate30117 <-  kinship(ped30117)[9,10] * kinship(ped30117)[9,14] * kinship(ped30117)[9,16] * kinship(ped30117)[9,17] * kinship(ped30117)[10,14] * kinship(ped30117)[10,16] * kinship(ped30117)[10,17] * kinship(ped30117)[14,16] * kinship(ped30117)[14,17] * kinship(ped30117)[16,17]
+
 
 # Family 30-30134
 fam30134 <- data.table(famid=rep(30134, 14), id=c(11136, 11137, 11144, 11140, 11143, 11502, 11142, 11141, 11139, 11135, 11148, 11149, 11147, 11504), dadid=c(0,0,0,11136,0,0,11136,11136,11136,11144,11144,11144,11143,11502), momid=c(0,0,0,11137,0,0,11137,11137,11137,11140,11140,11140,11140,11142), sex=c(1,2,1,2,1,1,2,2,1,1,2,1,2,1), avail=c(rep(0,6),1,0,0,1,1,0,0,0))
-aff30134 <- data.table(schizophrenia=c(NA,NA,NA,0,NA,NA,0,0,0,1,1,0,0,1), schizoaffective_dis=c(NA,NA,NA,0,NA,NA,1,0,0,0,0,0,0,0), other_mental_disorder=c(NA,NA,NA,1,NA,NA,0,0,1,0,0,0,1,0))
+aff30134 <- data.table(schizophrenia=c(NA,NA,NA,0,NA,NA,1,0,0,1,1,0,0,1), other_mental_disorder=c(NA,NA,NA,1,NA,NA,0,0,1,0,0,0,1,0))
 ped30134 <- pedigree(id=fam30134$id, momid=fam30134$momid, dadid=fam30134$dadid, sex=fam30134$sex, affected=as.matrix(aff30134))
 id30134 <- paste(fam30134$id, c(" "," "," ", " "," "," ", "90C03133"," ", " ", "90C02936", "90C02963", " ", " ", " "), sep="\n")
 plot(ped30134, col=ifelse(fam30134$avail, 4, 1), id=id30134)
+relate30134 <- kinship(ped30134)[7,10] * kinship(ped30134)[7,11] * kinship(ped30134)[10,11]
 
 # Family 30-30135
 
 fam30135 <- data.frame(famid=rep(30135, 16), id=c(11176,11177,11259,11181,11182,11183,11265,11173,11174,11187,11188,11186,11194,11191,11175,11199), dadid=c(0,0,0,0,11176,0,11259,11181,11181,0,0,11181,11183,11183,11187,11188), momid=c(0,0,0,0,11177,0,11177,11182,11182,0,0,11182,11182,11182,11174,11174), sex=c(1,2,1,1,2,1,2,1,2,1,1,2,2,2,1,2), avail=c(rep(0,6),1,1,1,0,0,1,0,0,0,0))
-aff30135 <- data.frame(schizophrenia=c(NA,0,0,0,1,0,1,1,1,0,0,1,1,0,0,0), paranoid=c(NA,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0), other_mental_disorder=c(NA,0,1,1,0,0,0,0,0,0,1,0,0,0,0,0))
+aff30135 <- data.frame(schizophrenia=c(NA,0,0,0,1,0,1,1,1,0,0,1,1,0,0,0), other_mental_disorder=c(NA,0,1,1,0,0,0,0,0,0,1,0,0,1,1,0))
 id30135 <- paste(fam30135$id, c(" "," "," "," "," "," ","90C03142", "90C02970", "90C02971", " ", " ", "90C03009", " ", " "," ", " "), sep="\n")
 ped30135 <- pedigree(id=fam30135$id, momid=fam30135$momid, dadid=fam30135$dadid, sex=fam30135$sex, affected=as.matrix(aff30135))
 ped30135$censor <- c(1,1,1,1,1,1, rep(0,10))
 relate <- matrix(c(11173, 11174, 2), nrow=1, byrow=TRUE)
 ped30135 <- pedigree(id=fam30135$id, momid=fam30135$momid, dadid=fam30135$dadid, sex=fam30135$sex, affected=as.matrix(aff30135), status=ped30135$censor, relation=relate)
 plot(ped30135, col=ifelse(fam30135$avail, 4, 1), id=id30135)
+relate30135 <- kinship(ped30135)[7,8] * kinship(ped30135)[7,9] * kinship(ped30135)[7,12] * kinship(ped30135)[8,9] * kinship(ped30135)[8,12] * kinship(ped30135)[9,12]
 
 # Family 32-32213
 
@@ -48,6 +54,8 @@ aff32213 <- data.frame(schizophrenia=c(NA,NA,NA,NA,NA,NA,NA,NA,NA,1,1,1,1,0), ot
 id32213 <- paste(fam32213$id, c(" ", " ", " ", " ", " ", " ", " ", " ", " ", "90C01298", "90C01297", "90C01304", "90C01308", "90C01319"), sep="\n")
 ped32213 <- pedigree(id=fam32213$id, momid=fam32213$momid, dadid=fam32213$dadid, sex=fam32213$sex, affected=as.matrix(aff32213), status=fam32213$status)
 plot(ped32213, col=ifelse(fam32213$avail, 4, 1), id=id32213)
+kinship(ped32213)
+relate32213 <- kinship(ped32213)[11,12] * kinship(ped32213)[11,13] * kinship(ped32213)[11,14] * kinship(ped32213)[12,13] * kinship(ped32213)[12,14] * kinship(ped32213)[13,14]
 
 # Family 30-30136
 
@@ -56,6 +64,8 @@ aff30136 <- data.frame(schizophrenie=c(0,NA,0,1,NA,1,0,1,1,0,1,0), other_mental_
 id30136 <- paste(fam30136$id, c(" "," ", " ","90C02992"," ", " ", " ", "90C03067", "90C03522", " ", "90C03520", " "), sep="\n")
 ped30136 <- pedigree(id=fam30136$id, momid=fam30136$momid, dadid=fam30136$dadid, sex=fam30136$sex, affected=as.matrix(aff30136), status=fam30136$status)
 plot(ped30136, col=ifelse(fam30136$avail, 4, 1), id=id30136)
+kinship(ped30136)
+relate30136 <- kinship(ped30136)[4,8] * kinship(ped30136)[4,9] * kinship(ped30136)[4,11] * kinship(ped30136)[8,9] * kinship(ped30136)[8,11] * kinship(ped30136)[9,11]
 
 # Family 30-30142
 
@@ -64,6 +74,8 @@ aff30142 <- data.frame(schizophrenia=c(NA,NA,NA,NA,0,1,0,1,0,0,0,1,1,0), other_m
 id30142 <- paste(fam30142$id, c(" "," "," "," "," ", "90C03540"," "," "," "," "," ","90C03310", "90C03332"," "), sep="\n")
 ped30142 <- pedigree(id=fam30142$id, momid=fam30142$momid, dadid=fam30142$dadid, sex=fam30142$sex, affected=as.matrix(aff30142), status=fam30142$status)
 plot(ped30142, col=ifelse(fam30142$avail, 4, 1), id=id30142)
+kinship(ped30142)
+relate30142 <- kinship(ped30142)[6,12] * kinship(ped30142)[6,13] * kinship(ped30142)[12,13]
 
 # Family 31-31114
 
@@ -72,6 +84,8 @@ aff31114 <- data.frame(schizophrenia=c(0,0,0,1,0,0,0,0,0,1,1,1,0,1,0,0,1,0), oth
 id31114 <- paste(fam31114$id, c(" ", " ", " ", " ", " ", " "," "," "," ","90C01805","90C01840"," "," ","90C01798"," "," ","90C01801"," "), sep="\n")
 ped31114 <- pedigree(id=fam31114$id, momid=fam31114$momid, dadid=fam31114$dadid, sex=fam31114$sex, affected=as.matrix(aff31114), status=fam31114$status)
 plot(ped31114, col=ifelse(fam31114$avail, 4, 1), id=id31114)
+kinship(ped31114)
+relate31114 <- kinship(ped31114)[10,11] * kinship(ped31114)[10,14] * kinship(ped31114)[10,17] * kinship(ped31114)[11,14] * kinship(ped31114)[11,17] * kinship(ped31114)[14,17]
 
 # Family 31-31119
 
@@ -80,7 +94,8 @@ aff31119 <- data.frame(schizophrenia=c(NA,NA,0,0,NA,NA,NA,NA,0,0,1,0,1,0,0,1,NA,
 id31119 <- paste(fam31119$id, c(rep(" ", 10), "90C01235", " ", "90C01334", rep(" ", 8), " 90C01890", "90C01891", " ", "90C04224", rep(" ", 3)), sep="\n")
 ped31119 <- pedigree(id=fam31119$id, momid=fam31119$momid, dadid=fam31119$dadid, sex=fam31119$sex, affected=as.matrix(aff31119), status=fam31119$status)
 plot(ped31119, col=ifelse(fam31119$avail, 4, 1), id=id31119)
-
+kinship(ped31119)
+relate31119 <- kinship(ped31119)[11,13] * kinship(ped31119)[11,22] * kinship(ped31119)[11,23] * kinship(ped31119)[11,25] * kinship(ped31119)[13,22] * kinship(ped31119)[13,23] * kinship(ped31119)[13,25] * kinship(ped31119)[22,23] * kinship(ped31119)[22,25] * kinship(ped31119)[23,25]
 
 # Family 53-108
 
@@ -89,6 +104,8 @@ aff53108 <- data.frame(schizophrenia=c(rep(NA,8),1,1,1,0,1,1))
 id53108 <- paste(fam53108$id, c(rep(" ", 8), "01C08761", "01C08396", "01C08398", " ", "01C08760", "01C08766"), sep="\n")
 ped53108 <- pedigree(id=fam53108$id, momid=fam53108$momid, dadid=fam53108$dadid, sex=fam53108$sex, affected=as.matrix(aff53108))
 plot(ped53108, col=ifelse(fam53108$avail, 4, 1), id=id53108)
+kinship(ped53108)
+relate53108 <- kinship(ped53108)[9,10] * kinship(ped53108)[9,11] * kinship(ped53108)[9,13] * kinship(ped53108)[9,14] * kinship(ped53108)[10,11] * kinship(ped53108)[10,13] * kinship(ped53108)[10,14] * kinship(ped53108)[11,13] * kinship(ped53108)[11,14] * kinship(ped53108)[13,14]
 
 # Family 70-1120
 
@@ -97,6 +114,8 @@ aff701120 <- data.frame(schizophrenia=c(NA,NA,NA,0,1,0,0,NA,0,1,0,0,0,NA,NA,1,NA
 id701120 <- paste(fam701120$id, c(rep(" ", 4), "03C21012", rep(" ", 13), "03C19764", rep(" ", 22),"03C20094", " ", " ", "03C21155", rep(" ", 7)), sep="\n")
 ped701120 <- pedigree(id=fam701120$id, momid=fam701120$momid, dadid=fam701120$dadid, sex=fam701120$sex, affected=as.matrix(aff701120))
 plot(ped701120, col=ifelse(fam701120$avail, 4, 1), id=id701120)
+kinship(ped701120)
+relate701120 <- kinship(ped701120)[5,19] * kinship(ped701120)[5,42] * kinship(ped701120)[5,45] * kinship(ped701120)[19,42] * kinship(ped701120)[19,45] * kinship(ped701120)[42,45]
 
 
 # Family 70-1096
@@ -104,9 +123,10 @@ plot(ped701120, col=ifelse(fam701120$avail, 4, 1), id=id701120)
 fam701096 <- data.frame(famid=rep(701096, 28), id=c(56033,56034,10693,11503,11292,11487,56031,11724,56027,11486,11091,11081,56110,11536,11537,11538,11728,11498,11499,11500,11501,11502,11863,11080,11634,11726,11727,56071), dadid=c(0,0,56033,0,56033,56033,0,0,56033,11503,11487,0,0,11487,11487,11487,0,11724,11724,11724,11724,11724,0,11091,56110,11728,11728,11502), momid=c(0,0,56034,0,56034,56034,0,0,56034,11292,56031,0,0,56031,56031,56031,0,56027,56027,56027,56027,56027,0,11081,11536,11498,11498,11863), sex=c(1,2,1,1,2,1,2,1,2,2,1,2,1,2,2,1,1,2,1,2,1,1,2,2,1,2,2,1), avail=c(0,0,1,0,1,rep(0,19),1,0,0,0))
 aff701096 <- data.frame(schizophrenia=c(NA,NA,1,0,1,0,NA,NA,NA,0,0,0,NA,0,0,0,NA,0,rep(NA, 5),0,1,0,0,NA), other_mental_disorder=c(NA,NA,0,0,0,1,NA,NA,NA,1,1,1,NA,1,1,0,NA,1,rep(NA,5),1,0,0,0,NA))
 id701096 <- paste(fam701096$id, c(" ", " ", "02C10767", " ", "02C10243", rep(" ", 19), "03C14076", rep(" ", 3)), sep="\n")
-ped701120 <- pedigree(id=fam701096$id, momid=fam701096$momid, dadid=fam701096$dadid, sex=fam701096$sex, affected=as.matrix(aff701096))
-plot(ped701120, col=ifelse(fam701096$avail, 4, 1), id=id701096)
-
+ped701096 <- pedigree(id=fam701096$id, momid=fam701096$momid, dadid=fam701096$dadid, sex=fam701096$sex, affected=as.matrix(aff701096))
+plot(ped701096, col=ifelse(fam701096$avail, 4, 1), id=id701096)
+kinship(ped701096)
+relate70106 <-  kinship(ped701096)[3,5] * kinship(ped701096)[3,25] * kinship(ped701096)[5,25]
 
 # Family 71-5077
 
@@ -115,7 +135,8 @@ aff715077 <- data.frame(schizophrenia=c(rep(NA,7),0,NA,NA,0,0,NA,0,1,1,0,0,0,NA,
 id715077 <- paste(fam715077$id, c(rep(" ",14), "03C13990", "03C17802",rep(" ", 6),"03C15391",rep(" ", 3)), sep="\n")
 ped715077 <- pedigree(id=fam715077$id, momid=fam715077$momid, dadid=fam715077$dadid, sex=fam715077$sex, affected=as.matrix(aff715077))
 plot(ped715077, col=ifelse(fam715077$avail, 4, 1), id=id715077)
-
+kinship(ped715077)
+relate715077 <- kinship(ped715077)[15,16] * kinship(ped715077)[15,23] * kinship(ped715077)[16,23]
 
 # Family 70-1179
 
@@ -124,6 +145,8 @@ aff701179 <- data.frame(schizophrenia=c(rep(NA,4),0,rep(NA,4),1,NA,1,0,0,0,NA,NA
 id701179 <- paste(fam701179$id, c(rep(" ",9)," 04C37692"," ", "04C37691", rep(" ", 12), "05C50396", rep(" ", 3)), sep="\n")
 ped701179 <- pedigree(id=fam701179$id, momid=fam701179$momid, dadid=fam701179$dadid, sex=fam701179$sex, affected=as.matrix(aff701179))
 plot(ped701179, col=ifelse(fam701179$avail, 4, 1), id=id701179)
+kinship(ped701179)
+relate701179 <- kinship(ped701179)[10,12] * kinship(ped701179)[10,25] * kinship(ped701179)[12,25]
 
 # Family 45-1040
 
@@ -132,6 +155,8 @@ aff451040 <- data.frame(schizophrenia=c(rep(0,8),rep(1,5)))
 id451040 <- paste(fam451040$id, c(rep(" ",8),"03C14989", "03C14865", "03C14829", "03C14816", "03C14821"), sep="\n")
 ped451040 <- pedigree(id=fam451040$id, momid=fam451040$momid, dadid=fam451040$dadid, sex=fam451040$sex, affected=as.matrix(aff451040))
 plot(ped451040, col=ifelse(fam451040$avail, 4, 1), id=id451040)
+kinship(ped451040)
+relate451040 <- kinship(ped451040)[9,10] * kinship(ped451040)[9,11] * kinship(ped451040)[9,12] * kinship(ped451040)[9,13] * kinship(ped451040)[10,11] * kinship(ped451040)[10,12] * kinship(ped451040)[10,13] * kinship(ped451040)[11,12] * kinship(ped451040)[11,13] * kinship(ped451040)[12,13]
 
 # Family 44-1053
 
@@ -140,6 +165,8 @@ aff441053 <- data.frame(schizophrenia=c(NA,NA,0,NA,NA,0,0,1,0,0,NA,1), other_men
 id441053 <- paste(fam441053$id, c(rep(" ", 7)," 01C09383", "01C09388"," ", " ", "02C09539"))
 ped441053 <- pedigree(id=fam441053$id, momid=fam441053$momid, dadid=fam441053$dadid, sex=fam441053$sex, affected=as.matrix(aff441053), status=fam441053$status)
 plot(ped441053, col=ifelse(fam441053$avail, 4, 1), id=id441053)
+kinship(ped441053)
+relate441053 <- kinship(ped441053)[8,9] * kinship(ped441053)[8,12] * kinship(ped441053)[9,12]
 
 # Family 70-1088
 
@@ -148,6 +175,8 @@ aff701088 <- data.frame(schizophrenia=c(rep(NA,7),1,rep(NA,4),0,1,NA,1,NA,0,0,0,
 id701088 <- paste(fam701088$id, c(rep(" ",21),"02C12825","02C12826",rep(" ",5),"02C11048",rep(" ",6)), sep="\n")
 ped701088 <- pedigree(id=fam701088$id, momid=fam701088$momid, dadid=fam701088$dadid, sex=fam701088$sex, affected=as.matrix(aff701088), status=fam701088$status)
 plot(ped701088, col=ifelse(fam701088$avail, 4, 1), id=id701088)
+kinship(ped701088)
+relate701088 <- kinship(ped701088)[22,23] * kinship(ped701088)[22,29] * kinship(ped701088)[23,29]
 
 # Family 49-1002
 
@@ -157,5 +186,7 @@ id491002 <- paste(fam491002$id, c(rep(" ",4),"00C01822"," ", " ","00C01656", "00
 relate491002 <- matrix(c(2, 5, 2), nrow=1, byrow=TRUE)
 ped491002 <- pedigree(id=fam491002$id, momid=fam491002$momid, dadid=fam491002$dadid, sex=fam491002$sex, affected=as.matrix(aff491002), status=fam491002$status, relation=relate491002)
 plot(ped491002, col=ifelse(fam491002$avail, 4, 1), id=id491002)
+kinship(ped491002)
+relate491002 <- kinship(ped491002)[5,8] * kinship(ped491002)[5,9] * kinship(ped491002)[8,9]
 
-
+relate31115 <- 0.5
