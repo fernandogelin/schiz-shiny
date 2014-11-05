@@ -47,12 +47,17 @@ verticalLayout(
       
 
       tabsetPanel(
-		    tabPanel('Variants', dataTableOutput('InfoTable')),
-		    tabPanel('Family Pedigree', plotOutput("ped"), p(verbatimTextOutput('relate'))),
-		    tabPanel('Summary', dataTableOutput('summary_all')),
-		    tabPanel('Selected Genes', includeHTML("www/selected_variants.html")),
-        tabPanel('Methods', includeHTML("www/schiz-methods.html")),
-        tabPanel('Table columns IDs', includeHTML("www/vcf_headings.html"))
+           tabPanel('Summary', dataTableOutput('summary_all')),
+           tabPanel('GC Axeq', dataTableOutput('InfoTableAxeq')),
+           tabPanel('IC Axeq', dataTableOutput('InfoTableIndAxeq')),
+           tabPanel('GC GATK', dataTableOutput('InfoTableGatk')),
+           tabPanel('IC GATK', dataTableOutput('InfoTableIndGatk')),
+           tabPanel('IC GATK T7', dataTableOutput('InfoTableIndGatkT7')),
+           tabPanel('IC GATK FP Recal', dataTableOutput('InfoTableIndGatkFPrecal')),
+           tabPanel('Family Pedigree', plotOutput("ped"), p(verbatimTextOutput('relate'))),
+           tabPanel('Selected Genes', includeHTML("www/selected_variants.html")),
+           tabPanel('Methods', includeHTML("www/schiz-methods.html")),
+           tabPanel('Table columns IDs', includeHTML("www/vcf_headings.html"))
     )
   )
 ))

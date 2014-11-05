@@ -1,57 +1,150 @@
 library(shiny)
 library(shinyIncubator)
 library(ggplot2)
-library(rjson)
+library(RJSONIO)
+library(data.table)
 
-load('data/env2.RData', envir=.GlobalEnv)
-load('data/summary.RData', envir=.GlobalEnv)
-var01 <- readRDS('data/var01.json.rds')
-var2 <- readRDS('data/var2.json.rds')
-var3 <- readRDS('data/var3.json.rds')
-var4 <- readRDS('data/var4.json.rds')
-var5 <- readRDS('data/var5.json.rds')
-var6 <- readRDS('data/var6.json.rds')
-var7 <- readRDS('data/var7.json.rds')
-var8 <- readRDS('data/var8.json.rds')
-var9 <- readRDS('data/var9.json.rds')
-var10 <- readRDS('data/var10.json.rds')
-var11 <- readRDS('data/var11.json.rds')
-var13 <- readRDS('data/var13.json.rds')
-var14 <- readRDS('data/var14.json.rds')
-var15 <- readRDS('data/var15.json.rds')
-var16 <- readRDS('data/var16.json.rds')
-var17 <- readRDS('data/var17.json.rds')
-var18 <- readRDS('data/var18.json.rds')
-var19 <- readRDS('data/var19.json.rds')
-summary_all <- read.csv("data/summary_all.csv", header=TRUE)
+summary_all <- read.csv("data/summary_table.csv", header=TRUE, na.strings=NA)
 
 source('data/schizPedigree.R')
-source('data/venn.R')
+
+load('data/tables.RData')
 
 
 shinyServer(function(input, output) {
-  datasetInputInfo <- reactive({
+  datasetInputInfoAxeq <- reactive({
     switch(input$dataset,
-           "Family 30-30134" = as.data.table(fromJSON(var8)),
-           "Family 30-30142" = as.data.table(fromJSON(var6)),
-           "Family 30-30117" = as.data.table(fromJSON(var16)),
-           "Family 30-30135" = as.data.table(fromJSON(var18)),
-           "Family 30-30136" = as.data.table(fromJSON(var17)),
-           "Family 31-31114" = as.data.table(fromJSON(var11)),
-           "Family 31-31119" = as.data.table(fromJSON(var14)),
-           "Family 32-32213" = as.data.table(fromJSON(var2)),
-           "Family 44-1053" = as.data.table(fromJSON(var15)),
-           "Family 45-1040" = as.data.table(fromJSON(var01)),
-           "Family 49-1002" = as.data.table(fromJSON(var19)),
-           "Family 53-108" = as.data.table(fromJSON(var4)),
-           "Family 56-195" = as.data.table(fromJSON(var5)),
-           "Family 70-1088" = as.data.table(fromJSON(var13)),
-           "Family 70-1096" = as.data.table(fromJSON(var9)),
-           "Family 70-1120" = as.data.table(fromJSON(var10)),
-           "Family 70-1179" = as.data.table(fromJSON(var3)),
-           "Family 71-5077" = as.data.table(fromJSON(var7))
+           "Family 30-30134" = id_30134_axeq,
+           "Family 30-30142" = id_30142_axeq,
+           "Family 30-30117" = id_30117_axeq,
+           "Family 30-30135" = id_30135_axeq,
+           "Family 30-30136" = id_30136_axeq,
+           "Family 31-31114" = id_31114_axeq,
+           "Family 31-31119" = id_31119_axeq,
+           "Family 32-32213" = id_32213_axeq,
+           "Family 44-1053" = id_441053_axeq,
+           "Family 45-1040" = id_451040_axeq,
+           "Family 49-1002" = id_491002_axeq,
+           "Family 53-108" = id_53108_axeq,
+           "Family 56-195" = id_56195_axeq,
+           "Family 70-1088" = id_701088_axeq,
+           "Family 70-1096" = id_701096_axeq,
+           "Family 70-1120" = id_701120_axeq,
+           "Family 70-1179" = id_701179_axeq,
+           "Family 71-5077" = id_715077_axeq
     )
   })
+       datasetInputInfoGatk <- reactive({
+            switch(input$dataset,
+                   "Family 30-30134" = id_30134_gatk,
+                   "Family 30-30142" = id_30142_gatk,
+                   "Family 30-30117" = id_30117_gatk,
+                   "Family 30-30135" = id_30135_gatk,
+                   "Family 30-30136" = id_30136_gatk,
+                   "Family 31-31114" = id_31114_gatk,
+                   "Family 31-31119" = id_31119_gatk,
+                   "Family 32-32213" = id_32213_gatk,
+                   "Family 44-1053" = id_441053_gatk,
+                   "Family 45-1040" = id_451040_gatk,
+                   "Family 49-1002" = id_491002_gatk,
+                   "Family 53-108" = id_53108_gatk,
+                   "Family 56-195" = id_56195_gatk,
+                   "Family 70-1088" = id_701088_gatk,
+                   "Family 70-1096" = id_701096_gatk,
+                   "Family 70-1120" = id_701120_gatk,
+                   "Family 70-1179" = id_701179_gatk,
+                   "Family 71-5077" = id_715077_gatk
+            )
+       })
+  datasetInputInfoIndGatk <- reactive({
+       switch(input$dataset,
+              "Family 30-30134" = id_30134_ind_gatk,
+              "Family 30-30142" = id_30142_ind_gatk,
+              "Family 30-30117" = id_30117_ind_gatk,
+              "Family 30-30135" = id_30135_ind_gatk,
+              "Family 30-30136" = id_30136_ind_gatk,
+              "Family 31-31114" = id_31114_ind_gatk,
+              "Family 31-31119" = id_31119_ind_gatk,
+              "Family 32-32213" = id_32213_ind_gatk,
+              "Family 44-1053" = id_441053_ind_gatk,
+              "Family 45-1040" = id_451040_ind_gatk,
+              "Family 49-1002" = id_491002_ind_gatk,
+              "Family 53-108" = id_53108_ind_gatk,
+              "Family 56-195" = id_56195_ind_gatk,
+              "Family 70-1088" = id_701088_ind_gatk,
+              "Family 70-1096" = id_701096_ind_gatk,
+              "Family 70-1120" = id_701120_ind_gatk,
+              "Family 70-1179" = id_701179_ind_gatk,
+              "Family 71-5077" = id_715077_ind_gatk
+       )
+  })
+  datasetInputInfoIndAxeq <- reactive({
+       switch(input$dataset,
+              "Family 30-30134" = id_30134_ind_axeq,
+              "Family 30-30142" = id_30142_ind_axeq,
+              "Family 30-30117" = id_30117_ind_axeq,
+              "Family 30-30135" = id_30135_ind_axeq,
+              "Family 30-30136" = id_30136_ind_axeq,
+              "Family 31-31114" = id_31114_ind_axeq,
+              "Family 31-31119" = id_31119_ind_axeq,
+              "Family 32-32213" = id_32213_ind_axeq,
+              "Family 44-1053" = id_441053_ind_axeq,
+              "Family 45-1040" = id_451040_ind_axeq,
+              "Family 49-1002" = id_491002_ind_axeq,
+              "Family 53-108" = id_53108_ind_axeq,
+              "Family 56-195" = id_56195_ind_axeq,
+              "Family 70-1088" = id_701088_ind_axeq,
+              "Family 70-1096" = id_701096_ind_axeq,
+              "Family 70-1120" = id_701120_ind_axeq,
+              "Family 70-1179" = id_701179_ind_axeq,
+              "Family 71-5077" = id_715077_ind_axeq
+       )
+  })
+  datasetInputInfoIndGatkT7 <- reactive({
+       switch(input$dataset,
+              "Family 30-30134" = id_30134_gatk_t7,
+              "Family 30-30142" = id_30142_gatk_t7,
+              "Family 30-30117" = id_30117_gatk_t7,
+              "Family 30-30135" = id_30135_gatk_t7,
+              "Family 30-30136" = id_30136_gatk_t7,
+              "Family 31-31114" = id_31114_gatk_t7,
+              "Family 31-31119" = id_31119_gatk_t7,
+              "Family 32-32213" = id_32213_gatk_t7,
+              "Family 44-1053" = id_441053_gatk_t7,
+              "Family 45-1040" = id_451040_gatk_t7,
+              "Family 49-1002" = id_491002_gatk_t7,
+              "Family 53-108" = id_53108_gatk_t7,
+              "Family 56-195" = id_56195_gatk_t7,
+              "Family 70-1088" = id_701088_gatk_t7,
+              "Family 70-1096" = id_701096_gatk_t7,
+              "Family 70-1120" = id_701120_gatk_t7,
+              "Family 70-1179" = id_701179_gatk_t7,
+              "Family 71-5077" = id_715077_gatk_t7
+       )
+  }) 
+  datasetInputInfoIndGatkFPrecal <- reactive({
+       switch(input$dataset,
+              "Family 30-30134" = id_30134_gatk_fp_recal,
+              "Family 30-30142" = id_30142_gatk_fp_recal,
+              "Family 30-30117" = id_30117_gatk_fp_recal,
+              "Family 30-30135" = id_30135_gatk_fp_recal,
+              "Family 30-30136" = id_30136_gatk_fp_recal,
+              "Family 31-31114" = id_31114_gatk_fp_recal,
+              "Family 31-31119" = id_31119_gatk_fp_recal,
+              "Family 32-32213" = id_32213_gatk_fp_recal,
+              "Family 44-1053" = id_441053_gatk_fp_recal,
+              "Family 45-1040" = id_451040_gatk_fp_recal,
+              "Family 49-1002" = id_491002_gatk_fp_recal,
+              "Family 53-108" = id_53108_gatk_fp_recal,
+              "Family 56-195" = id_56195_gatk_fp_recal,
+              "Family 70-1088" = id_701088_gatk_fp_recal,
+              "Family 70-1096" = id_701096_gatk_fp_recal,
+              "Family 70-1120" = id_701120_gatk_fp_recal,
+              "Family 70-1179" = id_701179_gatk_fp_recal,
+              "Family 71-5077" = id_715077_gatk_fp_recal
+       )
+  })
+  
   datasetHeading <- reactive({
     switch(input$dataset,
            "Family 30-30134" = "Family 30-30134 - European American",
@@ -74,28 +167,7 @@ shinyServer(function(input, output) {
            "Family 71-5077" = "Family 71-5077 - European American"
     )
   })
-  datasetSummary <- reactive({
-    switch(input$dataset,
-           "Family 30-30134" = summary.table.id_30134,
-           "Family 30-30142" = summary.table.id_30142,
-           "Family 30-30117" = summary.table.id_30117,
-           "Family 30-30135" = summary.table.id_30135,
-           "Family 30-30136" = summary.table.id_30136,
-           "Family 31-31114" = summary.table.id_31114,
-           "Family 31-31119" = summary.table.id_31119,
-           "Family 32-32213" = summary.table.id_32213,
-           "Family 44-1053" = summary.table.id_441053,
-           "Family 45-1040" = summary.table.id_451040,
-           "Family 49-1002" = summary.table.id_491002,
-           "Family 53-108" = summary.table.id_53108,
-           "Family 56-195" = summary.table.id_56195,
-           "Family 70-1088" = summary.table.id_701088,
-           "Family 70-1096" = summary.table.id_701096,
-           "Family 70-1120" = summary.table.id_701120,
-           "Family 70-1179" = summary.table.id_701179,
-           "Family 71-5077" = summary.table.id_715077
-    )
-  })
+  
   datasetInputRel <- reactive({
     switch(input$dataset,
            "Family 30-30134" = relate30134,
@@ -162,27 +234,86 @@ shinyServer(function(input, output) {
 		  "Family 71-5077" = plot(ped715077, col=ifelse(fam715077$avail, 4, 1), id=id715077)
 		  )
   })
-  output$InfoTable <- renderDataTable({
+  output$InfoTableAxeq <- renderDataTable({
     library(ggplot2)
-    table <- datasetInputInfo()
-    names(table)[70] = "esp6500_ALL"
-    names(table)[71] = "1000gAug2014_ALL"
-    names(table)[72] = "esp6500_EA"
-    names(table)[73] = "1000gAug2014_EA"
-    names(table)[74] = "esp6500_AA"
-    names(table)[75] = "1000gAug2014_AA"
-    names(table)[79] = "AB"
-    names(table)[80] = "AD"
-    names(table)[81] = "DP"
-    names(table)[82] = "GQ"
-    names(table)[83] = "GT"
-    names(table)[84] = "MQ0"
-    names(table)[85] = "PL"
-    table[,c(-11:-12,-15:-56,-58:-60,-64:-69), with=FALSE]
+    table <- datasetInputInfoAxeq()
+    names(table)[80] = "AB"
+    names(table)[81] = "AD"
+    names(table)[82] = "DP"
+    names(table)[83] = "GQ"
+    names(table)[84] = "GT"
+    names(table)[85] = "MQ0"
+    names(table)[86] = "PL"
+    table[,c(-11:-14,-16,-17,-21:-25,-27:-40,-42:-63,-65,-67,-69,-79), with=FALSE]
   })
-	output$plot <- renderPlot({
+  
+  output$InfoTableGatk <- renderDataTable({
+       library(ggplot2)
+       table <- datasetInputInfoGatk()
+       names(table)[80] = "AB"
+       names(table)[81] = "AD"
+       names(table)[82] = "DP"
+       names(table)[83] = "GQ"
+       names(table)[84] = "GT"
+       names(table)[85] = "MQ0"
+       names(table)[86] = "PL"
+       table[,c(-8,-11:-14,-16,-17,-21:-25,-27:-40,-42:-63,-65,-67,-69,-79), with=FALSE]
+  })
+  
+  output$InfoTableIndAxeq <- renderDataTable({
+       library(ggplot2)
+       table <- datasetInputInfoIndAxeq()
+       names(table)[80] = "AB"
+       names(table)[81] = "AD"
+       names(table)[82] = "DP"
+       names(table)[83] = "GQ"
+       names(table)[84] = "GT"
+       names(table)[85] = "MQ0"
+       names(table)[86] = "PL"
+       table[,c(-8:-40,-42:-63,-65,-67,-69,-79), with=FALSE]
+  })
+  
+  output$InfoTableIndGatk <- renderDataTable({
+       library(ggplot2)
+       table <- datasetInputInfoIndGatk()
+       names(table)[80] = "AB"
+       names(table)[81] = "AD"
+       names(table)[82] = "DP"
+       names(table)[83] = "GQ"
+       names(table)[84] = "GT"
+       names(table)[85] = "MQ0"
+       names(table)[86] = "PL"
+       table[,c(-8:-40,-42:-63,-65,-67,-69,-79), with=FALSE]
+  })
+  
+  output$InfoTableIndGatkT7 <- renderDataTable({
+       library(ggplot2)
+       table <- datasetInputInfoIndGatkT7()
+       names(table)[80] = "AB"
+       names(table)[81] = "AD"
+       names(table)[82] = "DP"
+       names(table)[83] = "GQ"
+       names(table)[84] = "GT"
+       names(table)[85] = "MQ0"
+       names(table)[86] = "PL"
+       table[,c(-8:-40,-42:-63,-65,-67,-69,-79), with=FALSE]
+  })
+  output$InfoTableIndGatkFPrecal <- renderDataTable({
+       library(ggplot2)
+       table <- datasetInputInfoIndGatkFPrecal()
+       names(table)[80] = "AB"
+       names(table)[81] = "AD"
+       names(table)[82] = "DP"
+       names(table)[83] = "GQ"
+       names(table)[84] = "GT"
+       names(table)[85] = "MQ0"
+       names(table)[86] = "PL"
+       table[,c(-8:-40,-42:-63,-65,-67,-69,-79), with=FALSE]
+  })
+     output$plot <- renderPlot({
 		plotInput()
 	}, height = 400, width = 400)
+  
 	output$ped <- renderPlot({
 	    pedigreeInput()
 		}, height = 400, width = 700)
@@ -196,7 +327,7 @@ shinyServer(function(input, output) {
     datasetSummary()
   })
   output$summary_all <- renderDataTable({
-    summary_all[,-1]
+    summary_all
   })
   output$relate <- renderText({ 
     paste("relatedeness =", datasetInputRel(), sep=" ")

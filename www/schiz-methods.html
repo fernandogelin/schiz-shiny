@@ -97,11 +97,11 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <p>Data Processing</p>
 </blockquote>
 <p>The initial steps of data processing involve aligning the raw data to a reference (in our case this reference is the UCSC human genome assembly <code>hg19</code>) using the software <code>BWA</code> which takes a <code>fastq</code> file as the input and returns a <code>SAM</code> file (sequence alignment map format).</p>
-<pre><code>BWA 
+<pre class="r"><code>BWA 
 
 bwa mem -t 10 -M /resources/hg19.fa /data/file1.fastq /data/file2.fastq &gt; /results/output.sam</code></pre>
 <p>After the alignment we use <code>Picard</code> to sort the coordinates of the SAM file and eliminate the PCR and optic duplicate read artifacts using the previous SAM file as the input and generating a <code>BAM</code> file (binary <code>SAM</code>) and its correspondent index (<code>BAI</code>) file.</p>
-<pre><code>Picard SortSam
+<pre class="r"><code>Picard SortSam
 
 java -Xmx50g -jar /software/picard-tools-1/picard-tools-1.114/SortSam.jar SO=coordinate I=/results/file.sam O=/results/file.sort.bam CREATE_INDEX=true
 
@@ -117,11 +117,11 @@ Picar BuildBamIndex
 
 java -Xmx50g -jar /software/picard-tools-1/picard-tools-1.114/BuildBamIndex.jar I=/results/file.dpl.adr.bam O=/results/file.dpl.adr.bai</code></pre>
 <p>The following steps use GATK to realign the reads based on known indel sites. It requires a reference indel list which in this case is <code>Mills_and_1000G_gold_standard.indels.b37.sites.vcf</code>. This file can be found in the GATK public FTP server by accessing:</p>
-<pre><code>location: ftp.broadinstitute.org
+<pre class="r"><code>location: ftp.broadinstitute.org
 username: gsapubftp-anonymous
 password: &lt;blank&gt;</code></pre>
 <p>There are four steps:</p>
-<pre><code>GATK RealignerTargetCreator
+<pre class="r"><code>GATK RealignerTargetCreator
 
 java -Xmx50g -jar /software/GenomeAnalysisTK.jar -nt 10 -T RealignerTargetCreator -R /resources/hg19.fa -I /results/file.dpl.adr.bam -o /results/intervalsList.list  -known /resources/indels.b37.sites.vcf
 
@@ -135,24 +135,17 @@ java -Xmx50g -jar /software/GenomeAnalysisTK.jar -T BaseRecalibrator -R /resourc
 
 GATK PrintReads
 
-java -Xmx50g -jar /software/GenomeAnalysisTK.jar -T PrintReads -R /resources/hg19.fa -I /results/file.realigned.bam --BQSR /results/file.table -o /results/file.recal.bam
-</code></pre>
+java -Xmx50g -jar /software/GenomeAnalysisTK.jar -T PrintReads -R /resources/hg19.fa -I /results/file.realigned.bam --BQSR /results/file.table -o /results/file.recal.bam</code></pre>
 <p>Up to this point the raw data was aligned to a reference, cleaned up to remove duplicates and realigned based on known indel sites. The final <code>BAM</code> file is know ready for variant calling. This process will return a raw <code>VCF</code> file (variant call format). This process involves multiple GATK functions. The first one calls the variants, then the variants are filtered. On this first step, variants will be called from the regions specified on the <code>interval.bed</code> file. This file can be generated using the UCSC Table Browser <a href="http://genome.ucsc.edu/cgi-bin/hgTables?command=start">http://genome.ucsc.edu/cgi-bin/hgTables?command=start</a>. - Choose the hg19 assembly of the human genome and set the track to RefSeq genes and the table to refGene. - Use BED format as output format and assign the file an appropriate name. - Clicking on get output. - Choose ”create one bed record per Exon plus 10bp at each end” and save the file. For this step, the variants are called for all individuals of the same family simultaniously.</p>
-<pre><code>java -Xmx50g -jar software/GenomeAnalysisTK.jar -nct 8 -T UnifiedGenotyper -L resources/UCSC_interval.bed -R resources/hg19.fa -I results/sample1.recal.bam -I results/sample2.recal.bam -I results/sample3.recal.bam -I results/sample4.recal.bam -I results/sample5.recal.bam -o results/temp/vcf/32-32213_fam_call_snps.vcf -stand_call_conf 20.0 -stand_emit_conf 20.0 -glm BOTH -dcov 1000 --annotation AlleleBalance --annotation FisherStrand --annotation DepthPerAlleleBySample --annotation RMSMappingQuality --annotation HomopolymerRun --annotation AlleleBalanceBySample --annotation HaplotypeScore --annotation LowMQ --annotation MappingQualityZero --annotation MappingQualityZeroBySample --annotation QualByDepth --annotation RMSMappingQuality -nda -mbq 20 -D resources/dbSNP137.vcf
+<pre class="r"><code>java -Xmx50g -jar software/GenomeAnalysisTK.jar -nct 8 -T UnifiedGenotyper -L resources/UCSC_interval.bed -R resources/hg19.fa -I results/sample1.recal.bam -I results/sample2.recal.bam -I results/sample3.recal.bam -I results/sample4.recal.bam -I results/sample5.recal.bam -o results/temp/vcf/32-32213_fam_call_snps.vcf -stand_call_conf 20.0 -stand_emit_conf 20.0 -glm BOTH -dcov 1000 --annotation AlleleBalance --annotation FisherStrand --annotation DepthPerAlleleBySample --annotation RMSMappingQuality --annotation HomopolymerRun --annotation AlleleBalanceBySample --annotation HaplotypeScore --annotation LowMQ --annotation MappingQualityZero --annotation MappingQualityZeroBySample --annotation QualByDepth --annotation RMSMappingQuality -nda -mbq 20 -D resources/dbSNP137.vcf
 
-java -Xmx50g -jar software/GenomeAnalysisTK.jar -T VariantFiltration -R resources/hg19.fa --variant results/temp/vcf/fam_call_snps.vcf -o results/family_call/fam_call_recal_filt.vcf --filterExpression &quot;QD &lt; 5.0&quot; --filterName &quot;QDFilter&quot; --filterExpression &quot;QUAL &lt;= 30.0&quot; --filterName &quot;QUALFilter&quot; --clusterSize 3 --downsample_to_coverage 1000 --baq OFF -baqGOP 40 --defaultBaseQualities 1 --filterExpression &quot;MQ &lt; 30.00&quot; --filterName &quot;MQ&quot; --filterExpression &quot;FS &gt; 60.000&quot; --filterName &quot;FS&quot; --filterExpression &quot;HRun &gt; 5.0&quot; --filterName &quot;HRunFilter&quot; --filterExpression &quot;ABHet &gt; 0.75&quot; --filterName &quot;ABFilter&quot; --filterExpression &quot;SB &gt; -10.0 &quot; --filterName &quot;StrandBias&quot;
-</code></pre>
-<p>After that, the variants are recalibrated based on false positive SNPs and indels from known databases (1000G, Mills, omni, HapMap), these help files can also be found on the GATK public FTP. First, in order to make recalibration and annotations easier, the family VCFs are combined into a single <code>VCF</code> file:</p>
-<pre><code>GATK CombineVariants
-
-java -Xmx2g -jar software/GenomeAnalysisTK.jar -R genome/hg19.fa -T CombineVariants --variant results/family_call/merged_vcf_fam_call_UCSC/45-1040_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/32-32213_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/70-1179_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/53-108_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/56-195_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/30-30142_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/71-5077_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/30-30134_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/70-1096_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/70-1120_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/31-31114_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/31-31115_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/70-1088_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/31-31119_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/44-1053_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/30-30117_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/30-30136_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/30-30135_fam_call_recal_filt.vcf --variant results/family_call/merged_vcf_fam_call_UCSC/49-1002_fam_call_recal_filt.vcf -o merged_vcf_gatk_fam_call_UCSC_target.vcf -genotypeMergeOptions UNIQUIFY
-</code></pre>
+java -Xmx50g -jar software/GenomeAnalysisTK.jar -T VariantFiltration -R resources/hg19.fa --variant results/temp/vcf/fam_call_snps.vcf -o results/family_call/fam_call_recal_filt.vcf --filterExpression &quot;QD &lt; 5.0&quot; --filterName &quot;QDFilter&quot; --filterExpression &quot;QUAL &lt;= 30.0&quot; --filterName &quot;QUALFilter&quot; --clusterSize 3 --downsample_to_coverage 1000 --baq OFF -baqGOP 40 --defaultBaseQualities 1 --filterExpression &quot;MQ &lt; 30.00&quot; --filterName &quot;MQ&quot; --filterExpression &quot;FS &gt; 60.000&quot; --filterName &quot;FS&quot; --filterExpression &quot;HRun &gt; 5.0&quot; --filterName &quot;HRunFilter&quot; --filterExpression &quot;ABHet &gt; 0.75&quot; --filterName &quot;ABFilter&quot; --filterExpression &quot;SB &gt; -10.0 &quot; --filterName &quot;StrandBias&quot;</code></pre>
+<p>We called UnifiedGenotyper on all samples generating a single VCF file that will have to be splitted using VCF-tools (subset-vcf). After that, the variants are recalibrated based on false positive SNPs and indels from known databases (1000G, Mills, omni, HapMap), these help files can also be found on the GATK public FTP.</p>
 <p>The reference files are formated slighlty different from the GATK output. The following code formats the GATK VCF output to be compatible with the reference files.</p>
-<pre><code>head -132 merged_vcf_gatk_fam_call_UCSC_target.vcf &gt; merged_vcf_gatk_fam_call_UCSC_target_corrected.vcf
-cat merged_vcf_gatk_fam_call_UCSC_target.vcf | grep -v ^# | sed 's/^/chr/' &gt;&gt; merged_vcf_gatk_fam_call_UCSC_target_corrected.vcf
-</code></pre>
+<pre class="r"><code>head -132 merged_vcf_gatk_fam_call_UCSC_target.vcf &gt; merged_vcf_gatk_fam_call_UCSC_target_corrected.vcf
+cat merged_vcf_gatk_fam_call_UCSC_target.vcf | grep -v ^# | sed 's/^/chr/' &gt;&gt; merged_vcf_gatk_fam_call_UCSC_target_corrected.vcf</code></pre>
 <p>The variant recalibration has to be done in two steps. The first pass will recalibrate the variants based on SNPs and the second pass will recalibrate based on indels:</p>
-<pre><code>VariantRecalibrator - SNPs
+<pre class="r"><code>VariantRecalibrator - SNPs
 
 java -Xmx4g -jar /share/apps/gatk-3.2.2/GenomeAnalysisTK.jar \
    -T VariantRecalibrator \
@@ -202,10 +195,9 @@ java -Xmx3g -jar /share/apps/gatk-3.2.2/GenomeAnalysisTK.jar \
    -tranchesFile results/variant_recal/merged_vcf_gatk_fam_call_UCSC_target.indel.tranches \
    -recalFile results/variant_recal/merged_vcf_gatk_fam_call_UCSC_target.indel.recal \
    -mode INDEL \
-   -o results/variant_recal/merged_vcf_gatk_fam_call_UCSC_target_corrected.indel.snp.recalibrated.filtered.vcf 
-   </code></pre>
+   -o results/variant_recal/merged_vcf_gatk_fam_call_UCSC_target_corrected.indel.snp.recalibrated.filtered.vcf </code></pre>
 <p>The VCF file is now ready for the annotation step. There are several sources for annotations. We use Annovar, SeattleSeq and SnpEff. SeattleSeq is a web based annotation service where you can submit the raw VCF file and download a annotated file. Annovar and SnpEff run from the command line. Multiple annotations can appear in the same VCF file.</p>
-<pre><code>Annovar
+<pre class="r"><code>Annovar
 
 apps/annovar/table_annovar.pl results/variant_recal/merged_vcf_gatk_fam_call_UCSC_target_corrected.indel.snp.recalibrated.filtered.vcf apps/annovar/humandb/
   -buildver hg19 -out results/annotated_vcf/merged_vcf_gatk_fam_call_UCSC_target_corrected.indel.snp.recalibrated.filtered.annovar -remove
@@ -213,10 +205,9 @@ apps/annovar/table_annovar.pl results/variant_recal/merged_vcf_gatk_fam_call_UCS
 
 SnpEff
 
-java -Xmx4g -jar software/snpEff/snpEff.jar -c software/snpEff/snpEff.config -v hg19 data/merged_vcf_gatk_fam_call_UCSC_target_corrected.indel.snp.recalibrated.filtered.vcf &gt; results/snpEff/merged_vcf_gatk_fam_call_UCSC_target_corrected.indel.snp.recalibrated.filtered.eff.vcf
-</code></pre>
+java -Xmx4g -jar software/snpEff/snpEff.jar -c software/snpEff/snpEff.config -v hg19 data/merged_vcf_gatk_fam_call_UCSC_target_corrected.indel.snp.recalibrated.filtered.vcf &gt; results/snpEff/merged_vcf_gatk_fam_call_UCSC_target_corrected.indel.snp.recalibrated.filtered.eff.vcf</code></pre>
 <p>Because Annovar does not fill the headings of the VCF file, this must be added by hand in order for GATK or R read the data.</p>
-<pre><code>Add to the VCF heading before selecting variants.
+<pre class="r"><code>Add to the VCF heading before selecting variants.
 ##INFO=&lt;ID=ANNOVAR_DATE,Number=1,Type=String,Description=&quot;annovar annotations date&quot;&gt;
 ##INFO=&lt;ID=Func.refGene,Number=1,Type=String,Description=&quot;gene function&quot;&gt;
 ##INFO=&lt;ID=Gene.refGene,Number=1,Type=String,Description=&quot;Gene name&quot;&gt;
@@ -232,10 +223,9 @@ java -Xmx4g -jar software/snpEff/snpEff.jar -c software/snpEff/snpEff.config -v 
 ##INFO=&lt;ID=1000g2014aug_eur,Number=1,Type=Float,Description=&quot;1000 genomes frequency&quot;&gt;
 ##INFO=&lt;ID=snp132,Number=1,Type=String,Description=&quot;snp132 ID&quot;&gt;
 ##INFO=&lt;ID=snp138,Number=1,Type=String,Description=&quot;snp138 ID&quot;&gt;
-##INFO=&lt;ID=ALLELE_END,Number=1,Type=String,Description=“marks the end of annotations for that allele&gt;
-</code></pre>
+##INFO=&lt;ID=ALLELE_END,Number=1,Type=String,Description=“marks the end of annotations for that allele&gt;</code></pre>
 <p>Once the annotation is completed and the annovar heading is added, the individual VCF files are drawn from the merged annotated file.</p>
-<pre><code>samples=( 00C01655.variant19 02C10767.variant9 03C17802.variant7 90C00691.variant16 90C01334.variant14 90C03009.variant18 00C01656.variant19 02C11048.variant13 03C19764.variant10 90C00789.variant16 90C01798.variant11 90C03067.variant17 00C01822.variant19 02C12825.variant13 03C20094.variant10 90C00866.variant16 90C01801.variant11 90C03142.variant18 01C08396.variant4 02C12826.variant13 03C21012.variant10 90C00990.variant16 90C01805.variant11 90C03310.variant6 01C08398.variant4 03C13990.variant7 03C21155.variant10 90C01063.variant12 90C01840.variant11 90C03313.variant8 01C08760.variant4 03C14076.variant9 04C30815.variant5 90C01235.variant14 90C01890.variant14 90C03332.variant6 01C08761.variant4 03C14816.variant 04C30822.variant5 90C01238.variant12 90C01891.variant14 90C03520.variant17 01C08766.variant4 03C14821.variant 04C30824.variant5 90C01297.variant2 90C02936.variant8 90C03522.variant17 01C09383.variant15 03C14829.variant 04C30825.variant5 90C01298.variant2 90C02963.variant8 90C03540.variant6 01C09388.variant15 03C14865.variant 04C37691.variant3 90C01304.variant2 90C02970.variant18 90C04224.variant14 02C09539.variant15 03C14989.variant 04C37692.variant3 90C01308.variant2 90C02971.variant18 02C10243.variant9 03C15391.variant7 05C50396.variant3 90C01319.variant2 90C02992.variant17 )
+<pre class="r"><code>samples=( 00C01655.variant19 02C10767.variant9 03C17802.variant7 90C00691.variant16 90C01334.variant14 90C03009.variant18 00C01656.variant19 02C11048.variant13 03C19764.variant10 90C00789.variant16 90C01798.variant11 90C03067.variant17 00C01822.variant19 02C12825.variant13 03C20094.variant10 90C00866.variant16 90C01801.variant11 90C03142.variant18 01C08396.variant4 02C12826.variant13 03C21012.variant10 90C00990.variant16 90C01805.variant11 90C03310.variant6 01C08398.variant4 03C13990.variant7 03C21155.variant10 90C01063.variant12 90C01840.variant11 90C03313.variant8 01C08760.variant4 03C14076.variant9 04C30815.variant5 90C01235.variant14 90C01890.variant14 90C03332.variant6 01C08761.variant4 03C14816.variant 04C30822.variant5 90C01238.variant12 90C01891.variant14 90C03520.variant17 01C08766.variant4 03C14821.variant 04C30824.variant5 90C01297.variant2 90C02936.variant8 90C03522.variant17 01C09383.variant15 03C14829.variant 04C30825.variant5 90C01298.variant2 90C02963.variant8 90C03540.variant6 01C09388.variant15 03C14865.variant 04C37691.variant3 90C01304.variant2 90C02970.variant18 90C04224.variant14 02C09539.variant15 03C14989.variant 04C37692.variant3 90C01308.variant2 90C02971.variant18 02C10243.variant9 03C15391.variant7 05C50396.variant3 90C01319.variant2 90C02992.variant17 )
 
 for i in &quot;${samples[@]}&quot;
 do
@@ -249,7 +239,7 @@ do
         -sn $i
 done</code></pre>
 <p>The VCF file is then transformed in a tab delimited file with multiple fields representing the variants and annotations. This step is done to facilitate manipulation in R.</p>
-<pre><code>GATK VariantsToTable
+<pre class="r"><code>GATK VariantsToTable
 FILES=results/SeattleSeq/select_variants_gatk/*.vcf
 for f in $FILES
 do
@@ -274,195 +264,305 @@ done</code></pre>
 <p>Data Analysis</p>
 </blockquote>
 <p>Once the raw data is processed we end up with a annotated VCF file. This file contains all variants for each individual. We then use R to analyze the data and extract the information we need. Variants were filtered in order to generate a reduced dataset. For that, we selected only exonic, non-synonymous variants, with frequencies lower than 0.1% in the 1000 genomes and esp6500 databases, and not present in the snp132 database.</p>
-<pre><code>library(data.table)
-library(rjson)
-# Open connection, read files and store in a varible.
-TablefileName=&quot;table_list.txt&quot;
-con=file(TablefileName, open=&quot;r&quot;)
-table_list=readLines(con)
-close(con)
+<pre class="r"><code>library(data.table)
+library(RJSONIO)
 
-IDfileName=&quot;table_list_ids.txt&quot;
-con=file(IDfileName, open=&quot;r&quot;)
-table_list_ids=readLines(con)
-close(con)
+# assign individuals to families
+id_491002 &lt;- c(&quot;49.1002.001&quot;, &quot;49.1002.002&quot;, &quot;49.1002.005&quot;, &quot;49.1002.017&quot;, &quot;49.1002.018&quot;)
+id_701096 &lt;- c(&quot;70.10693&quot;, &quot;70.11292&quot;, &quot;70.11634&quot;)
+id_715077 &lt;- c(&quot;71.5077.01&quot;, &quot;71.5077.02&quot;, &quot;71.5077.85&quot;)
+id_30117 &lt;- c(&quot;30.10084&quot;, &quot;30.10102&quot;, &quot;30.10115&quot;, &quot;30.10138&quot;)
+id_31119 &lt;- c(&quot;31.10046&quot;, &quot;31.10065&quot;, &quot;31.10103&quot;, &quot;31.10104&quot;, &quot;31.10302&quot;)
+id_30135 &lt;- c(&quot;30.11173&quot;, &quot;30.11174&quot;, &quot;30.11186&quot;, &quot;30.11265&quot;)
+id_701088 &lt;- c(&quot;11151&quot;, &quot;11606&quot;, &quot;11607&quot;)
+id_701120 &lt;- c(&quot;70.11714&quot;, &quot;70.11731&quot;, &quot;70.11760&quot;, &quot;70.11763&quot;)
+id_31114 &lt;- c(&quot;31.10087&quot;, &quot;31.10091&quot;, &quot;31.10092&quot;, &quot;31.10095&quot;)
+id_30136 &lt;- c(&quot;30.11207&quot;, &quot;30.11295&quot;, &quot;30.11296&quot;, &quot;30.11310&quot;)
+id_53108 &lt;- c(&quot;53.10031&quot;, &quot;53.10032&quot;, &quot;53.10035&quot;, &quot;53.10036&quot;, &quot;53.10046&quot;)
+id_30142 &lt;- c(&quot;30.11573&quot;, &quot;30.11583&quot;, &quot;30.11593&quot;)
+id_31115 &lt;- c(&quot;31.10039&quot;, &quot;31.10051&quot;) 
+id_30134 &lt;- c(&quot;30.11135&quot;, &quot;30.11148&quot;, &quot;30.11504&quot;)
+id_56195 &lt;- c(&quot;56.10203&quot;, &quot;56.10209&quot;, &quot;56.10210&quot;, &quot;56.10211&quot;)
+id_451040 &lt;- c(&quot;45.1040.001&quot;, &quot;45.1040.002&quot;, &quot;45.1040.003&quot;, &quot;45.1040.004&quot;, &quot;45.1040.005&quot;)
+id_32213 &lt;- c(&quot;32.10280&quot;, &quot;32.10290&quot;, &quot;32.10282&quot;, &quot;32.10283&quot;)
+id_441053 &lt;- c(&quot;44.1053.001&quot;, &quot;44.1053.002&quot;, &quot;44.1053.004&quot;)
+id_701179 &lt;- c(&quot;70.12255&quot;, &quot;70.12256&quot;, &quot;70.12565&quot;)
 
-famIDfileName=&quot;familyID.txt&quot;
-con=file(famIDfileName, open=&quot;r&quot;)
-family_IDs=readLines(con)
-close(con)
+family_list &lt;- c(id_701096, id_715077, id_31119, id_701088, id_701120, id_31114,
+                 id_30142, id_30134, id_451040, id_32213, id_701179, id_30135, id_491002, id_31115, id_441053, id_30117, id_30136, id_56195, id_53108)
 
-varIDfileName=&quot;variantID.txt&quot;
-con=file(varIDfileName, open=&quot;r&quot;)
-variant_IDs=readLines(con)
-close(con)
+fam_ind_list &lt;- list(id_701096=id_701096, id_715077=id_715077, id_31119=id_31119, id_701088=id_701088, id_701120=id_701120, id_31114=id_31114,
+                     id_30142=id_30142, id_30134=id_30134, id_451040=id_451040, id_32213=id_32213, id_701179=id_701179, id_30135=id_30135, id_491002=id_491002,
+                     id_31115=id_31115, id_441053=id_441053, id_30117=id_30117, id_30136=id_30136, id_56195=id_56195, id_53108=id_53108)
 
-# Function that takes a variant tag as argument and returns 
-by.family &lt;- function(variantID) {
-  variant &lt;- grep(variantID,table_list_ids, fixed=TRUE)
-  variant_file_names &lt;- c()
-  for (i in 1:length(variant)) {
-    variant_file_names &lt;- c(variant_file_names, table_list_ids[variant[i]])
-  }
-  return(variant_file_names)
+caucasian &lt;- c(&quot;id_701096&quot;, &quot;id_715077&quot;, &quot;id_31119&quot;, &quot;id_30135&quot;, &quot;id_701088&quot;, &quot;id_701120&quot;, &quot;id_31114&quot;,
+               &quot;id_30142&quot;, &quot;id_30134&quot;, &quot;id_451040&quot;, &quot;id_32213&quot;, &quot;id_701179&quot;)
+african_american &lt;- c(&quot;id_30135&quot;, &quot;id_491002&quot;, &quot;id_31115&quot;, &quot;id_441053&quot;, &quot;id_30117&quot;, &quot;id_30136&quot;)
+hispanic &lt;- c(&quot;id_56195&quot;, &quot;id_53108&quot;)
+
+## Step 1 - Read tables into R
+======================================
+
+# Create a list with filenames based on the directory
+filenames_axeq &lt;- list.files(&quot;data/axeq&quot;, pattern=&quot;*.annovar.seattleseq.vcf.table&quot;, 
+                        full.names=TRUE)
+
+filenames_gatk &lt;- list.files(&quot;data/gatk&quot;, pattern=&quot;*.annovar.seattleseq.vcf.table&quot;, 
+                             full.names=TRUE)
+
+filenames_gatk_recal &lt;- list.files(&quot;data/gatk_recal&quot;, pattern=&quot;*.annovar.seattleseq.vcf.table&quot;, 
+                             full.names=TRUE)
+
+createTableNamesAxeq &lt;- function(file_names) {
+     tablenames &lt;- sub(&quot;data/axeq/&quot;, &quot;axeq.&quot;, file_names)
+     tablenames &lt;- sub(&quot;.axeq.annovar.seattleseq.vcf.table&quot;, &quot;&quot;, tablenames)
+     tablenames &lt;- sub(&quot;-&quot;, &quot;.&quot;, tablenames)
+     tablenames &lt;- sub(&quot;-&quot;, &quot;.&quot;, tablenames)
 }
 
-
-############# 
-############# Step 1 - Read tables into R
-#############
-
-# Read tables from disk.
-for (i in 1:length(table_list)) {
-    fileName=paste(&quot;data&quot;, as.character(table_list[i]), sep=&quot;/&quot;)
-    print(paste(&quot;Reading table&quot;,fileName,sep=&quot; &quot;))
-    assign(table_list_ids[i], read.table(fileName, header=TRUE), envir=.GlobalEnv)
-    assign(paste(table_list_ids[i], &quot;json&quot;, sep=&quot;.&quot;), toJSON(get(table_list_ids[i])), envir=.GlobalEnv)    
+createTableNamesGatk &lt;- function(file_names) {
+     tablenamesG &lt;- sub(&quot;data/gatk/&quot;, &quot;gatk.&quot;, file_names)
+     tablenamesG &lt;- sub(&quot;.gatk.annovar.seattleseq.vcf.table&quot;, &quot;&quot;, tablenamesG)
+     tablenamesG &lt;- sub(&quot;-&quot;, &quot;.&quot;, tablenamesG)
+     tablenamesG &lt;- sub(&quot;-&quot;, &quot;.&quot;, tablenamesG)
 }
 
-############# 
-############# Step 2 - Filter and reduce tables
-#############
+createTableNamesGatkRecal &lt;- function(file_names) {
+     tablenamesGR &lt;- sub(&quot;data/gatk_recal/&quot;, &quot;recal.gatk.&quot;, file_names)
+     tablenamesGR &lt;- sub(&quot;.recal.gatk.annovar.seattleseq.vcf.table&quot;, &quot;&quot;, tablenamesGR)
+     tablenamesGR &lt;- sub(&quot;-&quot;, &quot;.&quot;, tablenamesGR)
+     tablenamesGR &lt;- sub(&quot;-&quot;, &quot;.&quot;, tablenamesGR)
+}
+
+tablenames_axeq &lt;- createTableNamesAxeq(filenames_axeq)
+not_used &lt;- c(&quot;axeq.32.10281&quot;, &quot;axeq.45.1040.002&quot;, &quot;axeq.45.1040.004&quot;, &quot;axeq.33.8520.10&quot;, &quot;axeq.33.8520.35&quot;)
+not_used_filter &lt;- !(tablenames_axeq %in% not_used)
+tablenamesAxeq2 &lt;- subset(tablenames_axeq, not_used_filter)
+
+tablenames_gatk &lt;- createTableNamesGatk(filenames_gatk)
+not_used_gatk &lt;- c(&quot;gatk.32.10281&quot;, &quot;gatk.33.8520.10&quot;, &quot;gatk.33.8520.35&quot;)
+not_used_filter_gatk &lt;- !(tablenames_gatk %in% not_used_gatk)
+tablenamesGatk2 &lt;- subset(tablenames_gatk, not_used_filter_gatk)
+
+tablenames_gatk_recal &lt;- createTableNamesGatkRecal(filenames_gatk_recal)
+not_used_gatk_recal &lt;- c(&quot;recal.gatk.32.10281&quot;, &quot;recal.gatk.33.8520.10&quot;, &quot;recal.gatk.33.8520.35&quot;)
+not_used_filter_gatk_recal &lt;- !(tablenames_gatk_recal %in% not_used_gatk_recal)
+tablenamesGatkRecal2 &lt;- subset(tablenames_gatk_recal, not_used_filter_gatk_recal)
+
+
+
+
+# Read tables from disk. (also creates a json file with the complete table)
+readTables &lt;- function(filenames_list, tablenames) {
+     for (i in 1:length(filenames_list)) {
+          fileName = as.character(filenames_list[i])
+          print(paste(&quot;Reading table&quot;,fileName,sep=&quot; &quot;))
+          assign(tablenames[i], read.table(unz(fileName), header=TRUE), 
+                 envir=.GlobalEnv)
+     }
+} 
+
+
+readTables(filenames_axeq, tablenamesAxeq2)
+readTables(filenames_gatk, tablenamesGatk2)
+readTables(filenames_gatk_recal, tablenamesGatkRecal2)
+
+ 
+## Step 2 - Filter and reduce tables
+=======================================
 
 # Subset tables based on given filters.
-filter.reduce.tables &lt;- function(fam_id_list) {
-  fam_list &lt;- unlist(lapply(unique(fam_id_list), get))
-  # Filter
-  reduced_fam_list &lt;- c()
-  for (i in 1:length(fam_list)) {
-    print(paste(&quot;Reducing table&quot;,fam_list[i],sep=&quot; &quot;))
-    exclude_gene_function &lt;- c(&quot;ncRNA_exonic&quot;, &quot;downstream&quot;, &quot;intronic&quot;, &quot;UTR3&quot;, &quot;upstream&quot;, &quot;UTR5&quot;, &quot; ncRNA_intronic&quot;, &quot; ncRNA_UTR3&quot;, &quot; ncRNA_UTR5&quot;, &quot;intergenic&quot;, &quot; ncRNA_splicing&quot;)
-    exclude_exonic_function &lt;- c(&quot;0&quot;, &quot;synonymous_SNV&quot;, &quot;unknown&quot;, &quot;nonframeshift_insertion&quot;, &quot;nonframeshift_deletion&quot;, &quot;NA&quot;)
-    
-    filter0 &lt;- as.character(get(fam_list[i])[,83]) != &quot;./.&quot;
-    assign(paste(&quot;real.var&quot;, fam_list[i], sep=&quot;.&quot;), subset(get(fam_list[i]), filter0))
-    
-    varTable &lt;- paste(&quot;real.var&quot;, fam_list[i], sep=&quot;.&quot;)
-    
-    # Filter snp132 by NA, 1000g and esp6500 frequencies, gene and exonic functions.
 
-    filter4 &lt;- !(get(varTable)$Func.refGene %in% exclude_gene_function)
-    filter5 &lt;- !(get(varTable)$ExonicFunc.refGene %in% exclude_exonic_function)
-    
-    assign(paste(&quot;total&quot;, fam_list[i], sep=&quot;.&quot;), subset(get(varTable), filter4 &amp; filter5), envir=.GlobalEnv)
-    print(paste(i, &quot;Done creating table with all exonic, non-synonymous variants for sample&quot;,fam_list[i],sep=&quot; &quot;))
-    
-    totalvarTable &lt;- paste(&quot;total&quot;, fam_list[i], sep=&quot;.&quot;)
-    
-    filter1 &lt;- is.na(get(totalvarTable)$snp132)
-    filter2 &lt;- get(totalvarTable)$esp6500si_all &lt; 0.01 | is.na(get(totalvarTable)$esp6500si_all)
-    filter3 &lt;- get(totalvarTable)$X1000g2014aug_all &lt; 0.01 | is.na(get(totalvarTable)$X1000g2014aug_all)
-
-    
-    assign(paste(&quot;rare&quot;,fam_list[i], sep=&quot;.&quot;), subset(get(totalvarTable), filter1 &amp; filter2 &amp; filter3, na.rm=FALSE), envir=.GlobalEnv)
-    print(paste(i, &quot;Done creating table with rare variants&quot;,fam_list[i],sep=&quot; &quot;))
-    
-    rareVarTable &lt;- paste(&quot;rare&quot;,fam_list[i], sep=&quot;.&quot;)
-    
-    sub &lt;- sub(&quot;(\\d*)(\\w)(\\d*).&quot;, &quot;&quot;, fam_list[i])
-    gt &lt;- strsplit(as.character(get(rareVarTable)[,83]), &quot;/&quot;)
-    filter7 &lt;- c()
-    for (j in 1:length(gt)) {
-      if (sub == &quot;variant2&quot;) {
-        filter7 &lt;- c(filter7, unlist(gt[j])[1] == unlist(gt[j])[2])
-      }
-      else {
-        filter7 &lt;- c(filter7, unlist(gt[j])[1] != unlist(gt[j])[2])
-      }
-    }
-    
-    assign(paste(&quot;rare.z&quot;,fam_list[i], sep=&quot;.&quot;), subset(get(rareVarTable), filter7), envir=.GlobalEnv)
-    print(paste(i, &quot;Done creating table with rare variants, with correct zygozity for sample&quot;,fam_list[i],sep=&quot; &quot;))
-    
-    rareZVarTable &lt;- paste(&quot;rare.z&quot;,fam_list[i], sep=&quot;.&quot;)
-    
-    filter2b &lt;- is.na(get(rareZVarTable)$esp6500si_all)
-    filter3b &lt;- is.na(get(rareZVarTable)$X1000g2014aug_all)
-    
-    assign(paste(&quot;rare.z.private&quot;,fam_list[i], sep=&quot;.&quot;), subset(get(rareZVarTable), filter2b &amp; filter3b, na.rm=FALSE), envir=.GlobalEnv)
-    print(paste(i, &quot;Done creating table with rare private variants for sample&quot;,fam_list[i],sep=&quot; &quot;))
-    reduced_fam_list &lt;- c(reduced_fam_list, paste(&quot;rare.z.private&quot;,fam_list[i], sep=&quot;.&quot;))
-
-  }
-  # Creates lists with start position and a start_list with ids.
-  start_list &lt;- c()
-  for (i in 1:length(reduced_fam_list)) {
-    assign(paste(&quot;start&quot;,reduced_fam_list[i], sep=&quot;.&quot;), get(reduced_fam_list[i])$POS, envir=.GlobalEnv)
-    start_list &lt;- c(start_list, paste(&quot;start&quot;,reduced_fam_list[i], sep=&quot;.&quot;))
-  }
+filter.exonic &lt;- function(filenames_list) {
+     # Filter
+     for (i in 1:length(filenames_list)) {
+          print(paste(&quot;Reducing table&quot;,filenames_list[i],sep=&quot; &quot;))
+          exclude_gene_function &lt;- c(&quot;downstream&quot;, &quot;intronic&quot;, &quot;UTR3&quot;, &quot;upstream&quot;, &quot;UTR5&quot;, &quot;ncRNA_intronic&quot;, &quot;ncRNA_UTR3&quot;, &quot;ncRNA_UTR5&quot;, &quot;intergenic&quot;, &quot;UTR5\\x3bUTR3&quot;, &quot;upstream\\x3bdownstream&quot;)
+          #exclude_exonic_function &lt;- c(&quot;0&quot;, &quot;synonymous_SNV&quot;, &quot;unknown&quot;, &quot;nonframeshift_insertion&quot;, &quot;nonframeshift_deletion&quot;, &quot;NA&quot;)
+          exclude_exonic_function &lt;- c(&quot;unknown&quot;, &quot;synonymous_SNV&quot;)
+          
+          # Filter snp132 by NA, 1000g and esp6500 frequencies, gene and exonic functions.
+          
+          filter_gene_func &lt;- !(get(filenames_list[i])$Func.refGene %in% exclude_gene_function)
+          filter_exonic_func &lt;- !(get(filenames_list[i])$ExonicFunc.refGene %in% exclude_exonic_function)
+          
+          assign(paste(&quot;exonic&quot;, filenames_list[i], sep=&quot;.&quot;), subset(get(filenames_list[i]), filter_gene_func &amp; filter_exonic_func), envir=.GlobalEnv)
+     }
 }
 
-# Assign &quot;sampleID.varianID&quot; to id_family
-for (i in 1:length(family_IDs)) {
-  assign(family_IDs[i],by.family(variant_IDs[i]))
-}
-# Get the family list and apply filter.reduce.tables to each individual from the family
-filter.reduce.tables(unique(family_IDs))
-
-
-############# 
-############# Step 3 - Find shared variants from the reduced tables
-#############
-
-# Assign &quot;start.reduced.sampleID.varianID&quot; to id_family
-famIDfileName=&quot;familyID.txt&quot;
-con=file(famIDfileName, open=&quot;r&quot;)
-family_IDs=readLines(con)
-close(con)
-for (i in 1:length(family_IDs)) {
-  assign(family_IDs[i],paste(&quot;start.reduced&quot;,by.family(variant_IDs[i]), sep=&quot;.&quot;))
+filter.rare &lt;- function(filenames_list) {
+     for (i in 1:length(filenames_list)) {
+          
+          print(paste(&quot;Reducing table&quot;,filenames_list[i],sep=&quot; &quot;))
+          exonicVarTable &lt;- paste(&quot;exonic&quot;, filenames_list[i], sep=&quot;.&quot;) # set table to be filtered
+          
+          # filters to apply
+          filter_dbsnp132 &lt;- is.na(get(exonicVarTable)$snp132)
+          filter_esp6500 &lt;- get(exonicVarTable)$esp6500si_all &lt; 0.01 | is.na(get(exonicVarTable)$esp6500si_all)
+          filter_1000g &lt;- get(exonicVarTable)$X1000g2014aug_all &lt; 0.01 | is.na(get(exonicVarTable)$X1000g2014aug_all)
+          
+          # assign new table to name
+          assign(paste(&quot;rare&quot;,filenames_list[i], sep=&quot;.&quot;),
+                 subset(get(exonicVarTable), filter_dbsnp132 &amp; filter_esp6500 &amp; filter_1000g, na.rm=FALSE), 
+                 envir=.GlobalEnv)
+     }
 }
 
+filter.private &lt;- function(filenames_list) {
+     for (i in 1:length(filenames_list)) {
+          print(paste(&quot;Reducing table&quot;,filenames_list[i],sep=&quot; &quot;))
+          rareVarTable &lt;- paste(&quot;rare&quot;,filenames_list[i], sep=&quot;.&quot;)  # set table to be filtered
+          
+          # filters to apply
+          filter_priv &lt;- is.na(get(rareVarTable)$esp6500si_all) &amp; is.na(get(rareVarTable)$X1000g2014aug_all)
+          
+          # assign new table to name.
+          assign(paste(&quot;private&quot;,filenames_list[i], sep=&quot;.&quot;),
+                 subset(get(rareVarTable), filter_priv), envir=.GlobalEnv)
+     }
+}
+
+filter.zygozity &lt;- function(filenames_list, zygozity) {
+     for (i in 1:length(filenames_list)) {
+          print(paste(&quot;Reducing table&quot;,filenames_list[i],sep=&quot; &quot;))
+          VarTable &lt;- paste(&quot;rare&quot;, filenames_list[i], sep=&quot;.&quot;)  # set table to be filtered
+          
+          gt &lt;- strsplit(as.character(get(VarTable)[,84]), &quot;/&quot;)
+          zyg &lt;- zygozity
+          filter &lt;- c()
+          for (j in 1:length(gt)) {
+               if (zyg == &quot;homo&quot;) {
+                    filter &lt;- c(filter, unlist(gt[j])[1] == unlist(gt[j])[2])
+               } # select homozygous variants
+               else { 
+                    filter &lt;- c(filter, unlist(gt[j])[1] != unlist(gt[j])[2]) # select heterozygous variants
+               }
+          }
+          zyg_table &lt;- subset(get(VarTable), filter)
+          
+          assign(paste(&quot;zyg&quot;,filenames_list[i], sep=&quot;.&quot;), 
+          zyg_table, envir=.GlobalEnv)
+          
+          assign(paste(&quot;start.list&quot;,filenames_list[i], sep=&quot;.&quot;), zyg_table$POS,  
+                 envir=.GlobalEnv) # creates lists with start positions for posterior use by shared.var function
+     }
+}
+
+
+# Create a list with individuals where we are looking for homozygous loci.
+homozygous_fam_axeq &lt;- c(&quot;axeq.32.10280&quot;,&quot;axeq.32.10282&quot;,&quot;axeq.32.10283&quot;,&quot;axeq.32.10290&quot;)
+homozygous_fam_gatk &lt;- c(&quot;gatk.32.10280&quot;,&quot;gatk.32.10282&quot;,&quot;gatk.32.10283&quot;,&quot;gatk.32.10290&quot;)
+homozygous_fam_gatk_recal &lt;- c(&quot;recal.gatk.32.10280&quot;,&quot;recal.gatk.32.10282&quot;,&quot;recal.gatk.32.10283&quot;,&quot;recal.gatk.32.10290&quot;)
+
+
+
+# Apply reduce functions to variant tables.
+filter.exonic(tablenamesAxeq2)
+filter.rare(tablenamesAxeq2)
+filter.private(tablenamesAxeq2)
+filter.zygozity(tablenamesAxeq2, &quot;hetero&quot;)
+filter.zygozity(homozygous_fam_axeq, &quot;homo&quot;)
+
+filter.exonic(tablenamesGatk2)
+filter.rare(tablenamesGatk2)
+filter.private(tablenamesGatk2)
+filter.zygozity(tablenamesGatk2, &quot;hetero&quot;)
+filter.zygozity(homozygous_fam_gatk, &quot;homo&quot;)
+
+filter.exonic(tablenamesGatkRecal2)
+filter.rare(tablenamesGatkRecal2)
+filter.private(tablenamesGatkRecal2)
+filter.zygozity(tablenamesGatkRecal2, &quot;hetero&quot;)
+filter.zygozity(homozygous_fam_gatk_recal, &quot;homo&quot;)
+
+
+## Step 3 - Find shared variants from the reduced tables
+=========================================================
+     
 # Find the shared variants
-family &lt;- c()
-for (i in 1:length(family_IDs)) {
-  family &lt;- lapply(family_IDs, get)
-  assign(paste(&quot;shared.var&quot;,family_IDs[i], sep=&quot;.&quot;), Reduce(intersect, lapply(unlist(family[i]), get)), envir=.GlobalEnv)
+family_IDs &lt;- c(&quot;id_491002&quot;, &quot;id_701096&quot;, &quot;id_715077&quot;, &quot;id_30117&quot;, &quot;id_31119&quot;, &quot;id_30135&quot;,
+                 &quot;id_701088&quot;, &quot;id_701120&quot;, &quot;id_31114&quot;, &quot;id_30136&quot;, &quot;id_53108&quot;, &quot;id_30142&quot;,
+                 &quot;id_31115&quot;, &quot;id_30134&quot;, &quot;id_56195&quot;, &quot;id_451040&quot;, &quot;id_32213&quot;, &quot;id_441053&quot;,
+                 &quot;id_701179&quot;)
+
+find.shared.var &lt;- function(fam_ID, source_of_sequence) {
+     table_list &lt;- paste(&quot;start.list&quot;, source_of_sequence, fam_ID, sep=&quot;.&quot;)
+     name &lt;- deparse(substitute(fam_ID))
+     assign(paste(&quot;shared.var&quot;, name, sep=&quot;.&quot;), Reduce(intersect, lapply(table_list, get)), envir=.GlobalEnv)
+     
+     currentTableNames &lt;- paste(&quot;zyg&quot;, source_of_sequence,fam_ID, sep=&quot;.&quot;)
+     for (i in 1:length(currentTableNames)) {
+          filter &lt;- get(currentTableNames[i])$POS %in% get(paste(&quot;shared.var&quot;, name, sep=&quot;.&quot;))
+          assign(paste(&quot;shared&quot;, currentTableNames[i], sep=&quot;.&quot;), subset(get(currentTableNames[i]), filter), envir=.GlobalEnv)
+     } 
 }
 
-# Subset tables to contain only shared variants.
-  # Filter
-  for (i in 1:length(table_list_ids)) {
-    filter &lt;- get(paste(&quot;rare.z&quot;, table_list_ids[i], sep=&quot;.&quot;))$POS %in% get(paste(&quot;shared.var.&quot;, family_IDs[i], sep=&quot;&quot;))
-    file_name &lt;- paste(&quot;shared.rare&quot;,table_list_ids[i], sep=&quot;.&quot;)
-    table &lt;- data.table(get(paste(&quot;rare.z&quot;,table_list_ids[i], sep=&quot;.&quot;)))
-    shared_reduced_table &lt;- subset(table, filter)
-    assign(file_name, shared_reduced_table, envir=.GlobalEnv)
-  }
+# Find shared variants for axeq sequences
+find.shared.var(id_491002, &quot;axeq&quot;)
+find.shared.var(id_701096, &quot;axeq&quot;)
+find.shared.var(id_715077, &quot;axeq&quot;)
+find.shared.var(id_30117, &quot;axeq&quot;)
+find.shared.var(id_31119, &quot;axeq&quot;)
+find.shared.var(id_30135, &quot;axeq&quot;)
+# find.shared.var(id_701088, &quot;axeq&quot;) # not available for axeq    
+find.shared.var(id_701120, &quot;axeq&quot;)
+find.shared.var(id_31114, &quot;axeq&quot;)
+find.shared.var(id_30136, &quot;axeq&quot;)
+find.shared.var(id_53108, &quot;axeq&quot;)
+find.shared.var(id_30142, &quot;axeq&quot;)
+find.shared.var(id_31115, &quot;axeq&quot;)
+find.shared.var(id_30134, &quot;axeq&quot;)
+find.shared.var(id_56195, &quot;axeq&quot;) 
+# find.shared.var(id_451040, &quot;axeq&quot;) # not available for axeq
+find.shared.var(id_32213, &quot;axeq&quot;)
+find.shared.var(id_441053, &quot;axeq&quot;)
+find.shared.var(id_701179, &quot;axeq&quot;)
 
-############# 
-############# Step 4 - Extract variants unique for the family
-#############
+# Find shared variants for gatk sequences
+find.shared.var(id_491002, &quot;gatk&quot;)
+find.shared.var(id_701096, &quot;gatk&quot;)
+find.shared.var(id_715077, &quot;gatk&quot;)
+find.shared.var(id_30117, &quot;gatk&quot;)
+find.shared.var(id_31119, &quot;gatk&quot;)
+find.shared.var(id_30135, &quot;gatk&quot;)
+find.shared.var(id_701088, &quot;gatk&quot;)
+find.shared.var(id_701120, &quot;gatk&quot;)
+find.shared.var(id_31114, &quot;gatk&quot;)
+find.shared.var(id_30136, &quot;gatk&quot;)
+find.shared.var(id_53108, &quot;gatk&quot;)
+find.shared.var(id_30142, &quot;gatk&quot;)
+find.shared.var(id_31115, &quot;gatk&quot;)
+find.shared.var(id_30134, &quot;gatk&quot;)
+find.shared.var(id_56195, &quot;gatk&quot;) 
+find.shared.var(id_451040, &quot;gatk&quot;)
+find.shared.var(id_32213, &quot;gatk&quot;)
+find.shared.var(id_441053, &quot;gatk&quot;)
+find.shared.var(id_701179, &quot;gatk&quot;)
 
-# Create a list with the variant tag to be used as argument of the by.family() function.
-var_id_list &lt;- paste(&quot;variant&quot;,c(1:19), sep=&quot;&quot;)
-var_id_list[1] &lt;- &quot;variant01&quot;
+# Find shared variants for recalibrated gatk sequences
+find.shared.var(id_491002, &quot;recal.gatk&quot;)
+find.shared.var(id_701096, &quot;recal.gatk&quot;)
+find.shared.var(id_715077, &quot;recal.gatk&quot;)
+find.shared.var(id_30117, &quot;recal.gatk&quot;)
+find.shared.var(id_31119, &quot;recal.gatk&quot;)
+find.shared.var(id_30135, &quot;recal.gatk&quot;)
+find.shared.var(id_701088, &quot;recal.gatk&quot;)
+find.shared.var(id_701120, &quot;recal.gatk&quot;)
+find.shared.var(id_31114, &quot;recal.gatk&quot;)
+find.shared.var(id_30136, &quot;recal.gatk&quot;)
+find.shared.var(id_53108, &quot;recal.gatk&quot;)
+find.shared.var(id_30142, &quot;recal.gatk&quot;)
+find.shared.var(id_31115, &quot;recal.gatk&quot;)
+find.shared.var(id_30134, &quot;recal.gatk&quot;)
+find.shared.var(id_56195, &quot;recal.gatk&quot;) 
+find.shared.var(id_451040, &quot;recal.gatk&quot;)
+find.shared.var(id_32213, &quot;recal.gatk&quot;)
+find.shared.var(id_441053, &quot;recal.gatk&quot;)
+find.shared.var(id_701179, &quot;recal.gatk&quot;)
 
 
-# Subset the tables to contain only those variants exclusive for each family. Argument is a list of individual table ids. This function gives the variants exclusive for each family. Variants that occur in other families are filtered out.
-cat.family.var &lt;- function(table_id) {
-  sub &lt;- sub(&quot;(\\d*)(\\w)(\\d*).&quot;, &quot;&quot;, table_id)
-  print(paste(&quot;Extracting unique variables&quot;,table_id,sep=&quot; &quot;))
-  if (sub == &quot;variant01&quot;) {
-    filter &lt;- get(paste(&quot;shared.rare&quot;, table_id, sep=&quot;.&quot;))$set == &quot;variant&quot;
-  }
-  else {
-    filter &lt;- get(paste(&quot;shared.rare&quot;, table_id, sep=&quot;.&quot;))$set == sub
-  }
-  assign(paste(&quot;unique.var&quot;,table_id, sep=&quot;.&quot;), subset(get(paste(&quot;shared.rare&quot;, table_id, sep=&quot;.&quot;)), filter), envir=.GlobalEnv)
-  print(paste(&quot;Finished extracting unique variables&quot;,table_id,sep=&quot; &quot;))
-}  
-
-
-# Apply the cat.family.var function to the samples in the table_list_ids list.
-lapply(table_list_ids, cat.family.var)
-
-# Creates a list with unique.var file names.
-unique_var_list &lt;- paste(&quot;unique.var.&quot;, table_list_ids, sep=&quot;&quot;)
-
-############# 
-############# Step 5 - Add columns to the tables with info from false positive dataset (Ashok's lists)
-#############
+## Step 4 - Add columns to the tables with info from false positive dataset (Ashok's lists)
+===========================================================================================
 
 # Add columns with excluded genes logical list.
 fileName=&quot;pseudogenes.txt&quot;
@@ -470,7 +570,7 @@ conn=file(fileName,open=&quot;r&quot;)
 linn=readLines(conn)
 pseudogenes &lt;- vector()
 for (i in 1:length(linn)){
-  pseudogenes &lt;- c(pseudogenes, linn[i])
+     pseudogenes &lt;- c(pseudogenes, linn[i])
 }
 close(conn)
 
@@ -479,153 +579,92 @@ conn=file(fileName,open=&quot;r&quot;)
 linn=readLines(conn)
 table7 &lt;- vector()
 for (i in 1:length(linn)){
-  table7 &lt;- c(table7, linn[i])
+     table7 &lt;- c(table7, linn[i])
 }
 close(conn)
 
-for (i in 1:length(table_list_ids)) {
-  file_name &lt;- paste(&quot;shared.rare.fp.col.&quot;,table_list_ids[i], sep=&quot;&quot;)
-  table &lt;- data.table(get(paste(&quot;unique.var.&quot;,table_list_ids[i], sep=&quot;&quot;)))
-  table_add_on &lt;- cbind(table, pseudogenes=as.character(table$GL) %in% pseudogenes, table7=as.character(table$GL) %in% table7)
-  assign(file_name, table_add_on, envir=.GlobalEnv)
+add.gene.column &lt;- function(filename) {
+     file &lt;- paste(&quot;shared.zyg.final&quot;,filename, sep=&quot;.&quot;)
+     table &lt;- data.table(get(paste(&quot;shared.zyg&quot;, filename, sep=&quot;.&quot;)))
+     table_add_on &lt;- cbind(table, pseudogenes=as.character(table$GL) %in% pseudogenes, table7=as.character(table$GL) %in% table7)
+     assign(file, table_add_on, envir=.GlobalEnv)
 }
 
+lapply(tablenamesAxeq2, add.gene.column)
+lapply(tablenamesGatk2, add.gene.column)
+lapply(tablenamesGatkRecal2, add.gene.column)
 
-############# 
-############# Step 6 - Create summary tables
-#############
+
+
+## Step 5 - Create summary tables
+=======================================
 
 # Create Summary Tables
-for (i in 1:length(table_list_ids)) {
-  assign(paste(&quot;summary&quot;, table_list_ids[i], sep=&quot;.&quot;), c(total=nrow(subset(get(table_list_ids[i]), as.character(get(table_list_ids[i])[,83]) != &quot;./.&quot;)), rare=length(get(paste(&quot;start.reduced&quot;, table_list_ids[i], sep=&quot;.&quot;))), shared=nrow(get(paste(&quot;unique.var&quot;, table_list_ids[i], sep=&quot;.&quot;))), private=nrow(subset(get(paste(&quot;unique.var&quot;, table_list_ids[i], sep=&quot;.&quot;)), is.na(get(paste(&quot;unique.var&quot;, table_list_ids[i], sep=&quot;.&quot;))$esp6500si_all) &amp; is.na(get(paste(&quot;unique.var&quot;, table_list_ids[i], sep=&quot;.&quot;))$X1000g2014aug_all)))), envir=.GlobalEnv)
+     summaryTable &lt;- function(ind_list) {
+          for (i in 1:length(ind_list)) {
+               if (ind_list[i] %in% c(&quot;11151&quot;, &quot;11606&quot;, &quot;11607&quot;, &quot;45.1040.001&quot;, &quot;45.1040.002&quot;, &quot;45.1040.003&quot;, &quot;45.1040.004&quot;, &quot;45.1040.005&quot;)) {
+                    total_axeq &lt;- NA
+                    exonic_axeq &lt;- NA
+                    rare_axeq &lt;-  NA
+                    private_axeq &lt;- NA
+                    zyg_axeq &lt;- NA
+                    shared_axeq &lt;- NA
+               }
+               else {
+                    total_axeq &lt;- nrow(get(paste(&quot;axeq&quot;, ind_list[i], sep=&quot;.&quot;)))
+                    exonic_axeq &lt;- nrow(get(paste(&quot;exonic.axeq&quot;, ind_list[i], sep=&quot;.&quot;)))
+                    rare_axeq &lt;-  nrow(get(paste(&quot;rare.axeq&quot;, ind_list[i], sep=&quot;.&quot;)))
+                    private_axeq &lt;- nrow(get(paste(&quot;private.axeq&quot;, ind_list[i], sep=&quot;.&quot;)))
+                    zyg_axeq &lt;- nrow(get(paste(&quot;zyg.axeq&quot;, ind_list[i], sep=&quot;.&quot;)))
+                    shared_axeq &lt;- nrow(get(paste(&quot;shared.zyg.axeq&quot;, ind_list[i], sep=&quot;.&quot;)))
+               }
+               summary_name &lt;- c(individual=ind_list[i], total_axeq=total_axeq,
+                                 # total_gatk=nrow(get(paste(&quot;gatk&quot;, ind_list[i], sep=&quot;.&quot;))),
+                                 total_gatk_recal=nrow(get(paste(&quot;recal.gatk&quot;, ind_list[i], sep=&quot;.&quot;))),
+                                 
+                                 exonic_axeq=exonic_axeq,
+                                 # exonic_gatk=nrow(get(paste(&quot;exonic.gatk&quot;, ind_list[i], sep=&quot;.&quot;))),
+                                 exonic_gatk_recal=nrow(get(paste(&quot;exonic.recal.gatk&quot;, ind_list[i], sep=&quot;.&quot;))),
+                                 
+                                 rare_axeq=rare_axeq,
+                                 # rare_gatk=nrow(get(paste(&quot;rare.gatk&quot;, ind_list[i], sep=&quot;.&quot;))),
+                                 rare_gatk_recal=nrow(get(paste(&quot;rare.recal.gatk&quot;, ind_list[i], sep=&quot;.&quot;))),
+                                 
+                                 private_axeq=private_axeq,
+                                 # private_gatk=nrow(get(paste(&quot;private.gatk&quot;, ind_list[i], sep=&quot;.&quot;))),
+                                 private_gatk_recal=nrow(get(paste(&quot;private.recal.gatk&quot;, ind_list[i], sep=&quot;.&quot;))),
+                                 
+                                 zyg_axeq=zyg_axeq,
+                                 # zyg_gatk=nrow(get(paste(&quot;zyg.gatk&quot;, ind_list[i], sep=&quot;.&quot;))),
+                                 zyg_gatk_recal=nrow(get(paste(&quot;zyg.recal.gatk&quot;, ind_list[i], sep=&quot;.&quot;))),
+                                 
+                                 shared_axeq=shared_axeq,
+                                 # shared_gatk=nrow(get(paste(&quot;shared.zyg.gatk&quot;, ind_list[i], sep=&quot;.&quot;))),
+                                 shared_gatk_recal=nrow(get(paste(&quot;shared.zyg.recal.gatk&quot;, ind_list[i], sep=&quot;.&quot;)))
+               )
+               assign(paste(&quot;summary&quot;, ind_list[i], sep=&quot;.&quot;), summary_name, envir=.GlobalEnv)
+          }
+     }
+
+lapply(fam_ind_list, summaryTable)
+
+
+family &lt;- list(&quot;id_701096&quot;,&quot;id_701096&quot;,&quot;id_701096&quot;,&quot;id_715077&quot;,&quot;id_715077&quot;,&quot;id_715077&quot;,&quot;id_31119&quot;,&quot;id_31119&quot;,
+               &quot;id_31119&quot;,&quot;id_31119&quot;,&quot;id_31119&quot;,&quot;id_701088&quot;,&quot;id_701088&quot;,&quot;id_701088&quot;,&quot;id_701120&quot;,&quot;id_701120&quot;,&quot;id_701120&quot;,
+               &quot;id_701120&quot;,&quot;id_31114&quot;,&quot;id_31114&quot;,&quot;id_31114&quot;,&quot;id_31114&quot;,
+               &quot;id_30142&quot;,&quot;id_30142&quot;,&quot;id_30142&quot;,&quot;id_30134&quot;,&quot;id_30134&quot;,&quot;id_30134&quot;,&quot;id_451040&quot;,&quot;id_451040&quot;,&quot;id_451040&quot;,
+               &quot;id_451040&quot;,&quot;id_451040&quot;,&quot;id_32213&quot;,&quot;id_32213&quot;,&quot;id_32213&quot;,&quot;id_32213&quot;,&quot;id_701179&quot;,&quot;id_701179&quot;,&quot;id_701179&quot;,
+               &quot;id_30135&quot;,&quot;id_30135&quot;,&quot;id_30135&quot;,&quot;id_30135&quot;,&quot;id_491002&quot;,&quot;id_491002&quot;,&quot;id_491002&quot;,&quot;id_491002&quot;,&quot;id_491002&quot;,
+               &quot;id_31115&quot;,&quot;id_31115&quot;,&quot;id_441053&quot;,&quot;id_441053&quot;,&quot;id_441053&quot;,&quot;id_30117&quot;,&quot;id_30117&quot;,&quot;id_30117&quot;,&quot;id_30117&quot;,
+               &quot;id_30136&quot;,&quot;id_30136&quot;,&quot;id_30136&quot;,&quot;id_30136&quot;,&quot;id_56195&quot;,&quot;id_56195&quot;,&quot;id_56195&quot;,&quot;id_56195&quot;,&quot;id_53108&quot;,&quot;id_53108&quot;,
+               &quot;id_53108&quot;,&quot;id_53108&quot;,&quot;id_53108&quot;)
+etnicity &lt;- c(rep(&quot;caucasian&quot;, 40), rep(&quot;african american&quot;, 22), rep(&quot;hispanic&quot;, 9))
+
+summary_table &lt;- c()
+for (i in 1:length(family_list)) {
+     summary_table &lt;- rbind(summary_table, get(paste(&quot;summary&quot;, family_list[i], sep=&quot;.&quot;)))
 }
-
-for (i in 1:length(family_IDs)) {
-  assign(family_IDs[i],paste(&quot;summary&quot;,by.family(variant_IDs[i]), sep=&quot;.&quot;))
-}
-
-summary_IDs &lt;- unique(family_IDs)
-summary_list &lt;- c()
-for (i in 1:length(summary_IDs)) {
-  family &lt;- get(summary_IDs[i])
-  table &lt;- c()
-  for (j in 1:length(family)) {
-    table &lt;- rbind(table, get(family[j]))
-    assign(paste(&quot;summary.table&quot;, summary_IDs[i], sep=&quot;.&quot;), table)
-    summary_list &lt;- c(summary_list, paste(&quot;summary.table&quot;, summary_IDs[i], sep=&quot;.&quot;))
-    assign(&quot;sum_list&quot;, summary_list)
-  }
-}
-
-############# 
-############# Step 7 - Create list for Venn diagrams 
-#############
-
-# Subset tables based on given filters.
-venn.list &lt;- function(fam_id_list) {
-  fam_list &lt;- unlist(lapply(unique(fam_id_list), get))
-  # Filter
-  reduced_fam_list &lt;- c()
-  for (i in 1:length(fam_list)) {
-    exclude_gene_function &lt;- c(&quot;ncRNA_exonic&quot;, &quot;downstream&quot;, &quot;intronic&quot;, &quot;UTR3&quot;, &quot;upstream&quot;, &quot;UTR5&quot;, &quot; ncRNA_intronic&quot;, &quot; ncRNA_UTR3&quot;, &quot; ncRNA_UTR5&quot;, &quot;intergenic&quot;, &quot; ncRNA_splicing&quot;)
-    exclude_exonic_function &lt;- c(&quot;0&quot;, &quot;synonymous_SNV&quot;, &quot;unknown&quot;, &quot;nonframeshift_insertion&quot;, &quot;nonframeshift_deletion&quot;, &quot;NA&quot;)
-    # Filter snp132 by NA, 1000g and esp6500 frequencies, gene and exonic functions.
-    filter1 &lt;- is.na(get(fam_list[i])$snp132)
-    filter2 &lt;- get(fam_list[i])$esp6500si_all &lt; 0.01 | is.na(get(fam_list[i])$esp6500si_all)
-    filter3 &lt;- get(fam_list[i])$X1000g2014aug_all &lt; 0.01 | is.na(get(fam_list[i])$X1000g2014aug_all)
-
-    filter4 &lt;- !(get(fam_list[i])$Func.refGene %in% exclude_gene_function)
-    filter5 &lt;- !(get(fam_list[i])$ExonicFunc.refGene %in% exclude_exonic_function)
-    filter6 &lt;- as.character(get(fam_list[i])[,83]) != &quot;./.&quot;
-    assign(fam_list[i], subset(get(fam_list[i]), filter1 &amp; filter2 &amp; filter3 &amp; filter4 &amp; filter5 &amp; filter6))
-    sub &lt;- sub(&quot;(\\d*)(\\w)(\\d*).&quot;, &quot;&quot;, fam_list[i])
-    gt &lt;- strsplit(as.character(get(fam_list[i])[,83]), &quot;/&quot;)
-    filter7 &lt;- c()
-    for (j in 1:length(gt)) {
-      if (sub == &quot;variant2&quot;) {
-        filter7 &lt;- c(filter7, unlist(gt[j])[1] == unlist(gt[j])[2])
-      }
-      else {
-        filter7 &lt;- c(filter7, unlist(gt[j])[1] != unlist(gt[j])[2])
-      }
-    }
-    assign(paste(&quot;reduced.unique&quot;,fam_list[i], sep=&quot;.&quot;), subset(get(fam_list[i]), filter7))
-    print(paste(i, &quot;Done creating start list for&quot;,fam_list[i],sep=&quot; &quot;))
-    reduced_fam_list &lt;- c(reduced_fam_list, paste(&quot;reduced.unique&quot;,fam_list[i], sep=&quot;.&quot;))
-  }
-  # Creates lists with start position and a start_list with ids.
-  start_list &lt;- c()
-  for (i in 1:length(reduced_fam_list)) {
-    assign(paste(&quot;start&quot;,reduced_fam_list[i], sep=&quot;.&quot;), get(reduced_fam_list[i])$POS, envir=.GlobalEnv)
-    start_list &lt;- c(start_list, paste(&quot;start&quot;,reduced_fam_list[i], sep=&quot;.&quot;))
-  }
-}
-
-# Assign &quot;sampleID.varianID&quot; to id_family
-for (i in 1:length(family_IDs)) {
-  assign(family_IDs[i],by.family(variant_IDs[i]))
-}
-# Get the family list and apply filter.reduce.tables to each individual from the family
-venn.list(unique(family_IDs))
-
-############# 
-############# Step 7 - Save R Data
-#############
-
-# Save R data
-
-save(summary.table.id_491002,summary.table.id_701096,summary.table.id_715077,summary.table.id_30117,summary.table.id_31119,summary.table.id_30135,summary.table.id_701088,summary.table.id_701120,summary.table.id_31114,summary.table.id_30136,summary.table.id_53108,summary.table.id_30142,summary.table.id_31115,summary.table.id_30134,summary.table.id_56195,summary.table.id_451040,summary.table.id_32213,summary.table.id_441053,summary.table.id_701179, file=&quot;summary.RData&quot;)
-
-# convert to JSON
-var19 &lt;- toJSON(shared.reduced.added.col.00C01655.variant19)
-var4 &lt;- toJSON(shared.reduced.added.col.01C08396.variant4)
-var15 &lt;- toJSON(shared.reduced.added.col.01C09383.variant15)
-var9 &lt;- toJSON(shared.reduced.added.col.02C10243.variant9)
-var13 &lt;- toJSON(shared.reduced.added.col.02C11048.variant13)
-var7 &lt;- toJSON(shared.reduced.added.col.03C13990.variant7)
-var01 &lt;- toJSON(shared.reduced.added.col.03C14816.variant01)
-var10 &lt;- toJSON(shared.reduced.added.col.03C19764.variant10)
-var5 &lt;- toJSON(shared.reduced.added.col.04C30815.variant5)
-var3 &lt;- toJSON(shared.reduced.added.col.04C37691.variant3)
-var16 &lt;- toJSON(shared.reduced.added.col.90C00691.variant16)
-var12 &lt;- toJSON(shared.reduced.added.col.90C01063.variant12)
-var14 &lt;- toJSON(shared.reduced.added.col.90C01235.variant14)
-var2 &lt;- toJSON(shared.reduced.added.col.90C01297.variant2)
-var11 &lt;- toJSON(shared.reduced.added.col.90C01798.variant11)
-var8 &lt;- toJSON(shared.reduced.added.col.90C02936.variant8)
-var18 &lt;- toJSON(shared.reduced.added.col.90C02970.variant18)
-var17 &lt;- toJSON(shared.reduced.added.col.90C02992.variant17)
-var6 &lt;- toJSON(shared.reduced.added.col.90C03310.variant6)
-
-saveRDS(var01, file=&quot;var01.json.rds&quot;)
-saveRDS(var2, file=&quot;var2.json.rds&quot;)
-saveRDS(var3, file=&quot;var3.json.rds&quot;)
-saveRDS(var4, file=&quot;var4.json.rds&quot;)
-saveRDS(var5, file=&quot;var5.json.rds&quot;)
-saveRDS(var6, file=&quot;var6.json.rds&quot;)
-saveRDS(var7, file=&quot;var7.json.rds&quot;)
-saveRDS(var8, file=&quot;var8.json.rds&quot;)
-saveRDS(var9, file=&quot;var9.json.rds&quot;)
-saveRDS(var10, file=&quot;var10.json.rds&quot;)
-saveRDS(var11, file=&quot;var11.json.rds&quot;)
-saveRDS(var12, file=&quot;var12.json.rds&quot;)
-saveRDS(var13, file=&quot;var13.json.rds&quot;)
-saveRDS(var14, file=&quot;var14.json.rds&quot;)
-saveRDS(var15, file=&quot;var15.json.rds&quot;)
-saveRDS(var16, file=&quot;var16.json.rds&quot;)
-saveRDS(var17, file=&quot;var17.json.rds&quot;)
-saveRDS(var18, file=&quot;var18.json.rds&quot;)
-saveRDS(var18, file=&quot;var19.json.rds&quot;)
-
-# Save unique var tables to disk in csv format
-unique_list_ids &lt;- paste(&quot;unique.var&quot;, table_list_ids, sep=&quot;.&quot;)
-
-save.table &lt;- function(table) {
-  write.csv(get(table), file=paste(&quot;data/&quot;, table, &quot;.csv&quot;, sep=&quot;&quot;))
-}
-lapply(unique_list_ids,save.table)
-
-</code></pre>
+summary_table &lt;- cbind(family, etnicity, summary_table)</code></pre>
 
 
 </div>

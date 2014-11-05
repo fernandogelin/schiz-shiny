@@ -60,19 +60,19 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </blockquote>
 <ul>
 <li><strong>ABFilter:</strong> ABHet &gt; 0.75</li>
-<li><strong>FS:</strong> FS &gt; 60.000</li>
-<li><strong>HRunFilter:</strong> HRun &gt; 5.0</li>
-<li><strong>LowQual:</strong> Low quality</li>
-<li><strong>MQ:</strong> MQ &lt; 30.00</li>
-<li><strong>QDFilter:</strong> QD &lt; 5.0</li>
+<li><p><strong>FS:</strong> FS (FisherStrand) &gt; 60.000<br /> Strand bias is a type of sequencing bias in which one DNA strand is favored over the other, which can result in incorrect evaluation of the amount of evidence observed for one allele vs. the other. The FisherStrand annotation is one of several methods that aims to evaluate whether there is strand bias in the data. It uses Fisher’s Exact Test to determine if there is strand bias between forward and reverse strands for the reference or alternate allele.” The output is a Phred-scaled p-value. The higher the output value, the more likely there is to be bias. More bias is indicative of false positive calls.</p></li>
+<li><p><strong>HRunFilter:</strong> HRun (HomopolymerRun) &gt; 5.0<br /> Repetitive sequences such as homopolymers are difficult to map to the reference because they are associated with multiple alignment possibilities. The proximity of a long homopolymer to your variant site increases the chance that reads were mapped incorrectly in the surrounding region and lowers confidence in the call. If there is a homopolymer on either side of a site, this annotation outputs the length of its largest run.</p></li>
+<li><strong>LowQual:</strong> Low quality<br /></li>
+<li><strong>MQ:</strong> MQ (RMSMappingQuality) &lt; 30.00<br /> This annotation provides an estimation of the overall mapping quality of reads supporting a variant call, averaged over all samples in a cohort.</li>
+<li><p><strong>QDFilter:</strong> QD (QualByDepth) &lt; 5.0<br /> This annotation puts the variant confidence QUAL score in perspective by normalizing for the amount of coverage available. Because each read contributes a little to the QUAL score, variants in regions with deep coverage can have artificially inflated QUAL scores, giving the impression that the call is supported by more evidence than it really is. To compensate for this, we normalize the variant confidence by depth, which gives us a more objective picture of how well supported the call is.</p></li>
 <li><strong>QUALFilter:</strong> QUAL &lt;= 30.0</li>
-<li><strong>StrandBias:</strong> SB &gt; -10.0</li>
+<li><p><strong>StrandBias:</strong> SB &gt; -10.0<br /> How much evidence is there for Strand Bias (the variation being seen on only the forward or only the reverse strand) in the reads? Higher SB values denote more bias (and therefore are more likely to indicate false positive calls).</p></li>
 <li><strong>VQSRTrancheINDEL99.00to99.90:</strong> Truth sensitivity tranche level for INDEL model at VQS Lod: -2.3399 &lt;= x &lt; -0.1322</li>
 <li><strong>VQSRTrancheINDEL99.90to100.00+:</strong> Truth sensitivity tranche level for INDEL model at VQS Lod &lt; -32.5803</li>
 <li><strong>VQSRTrancheINDEL99.90to100.00:</strong> Truth sensitivity tranche level for INDEL model at VQS Lod: -32.5803 &lt;= x &lt; -2.3399</li>
 <li><strong>VQSRTrancheSNP99.00to99.90:</strong> Truth sensitivity tranche level for SNP model at VQS Lod: -2.9996 &lt;= x &lt; 0.5828</li>
 <li><strong>VQSRTrancheSNP99.90to100.00+:</strong> Truth sensitivity tranche level for SNP model at VQS Lod &lt; -3652.922</li>
-<li><strong>VQSRTrancheSNP99.90to100.00:</strong> Truth sensitivity tranche level for SNP model at VQS Lod: -3652.922 &lt;= x &lt; -2.9996</li>
+<li><p><strong>VQSRTrancheSNP99.90to100.00:</strong> Truth sensitivity tranche level for SNP model at VQS Lod: -3652.922 &lt;= x &lt; -2.9996<br /> Variant Quality Score Recalibration (VQSRT) - The purpose of variant recalibration is to assign a well-calibrated probability to each variant call in a call set. This enables you to generate highly accurate call sets by filtering based on this single estimate for the accuracy of each call. The approach taken by variant quality score recalibration is to develop a continuous, covarying estimate of the relationship between SNP call annotations (QD, SB, HaplotypeScore, HRun, for example) and the the probability that a SNP is a true genetic variant versus a sequencing or data processing artifact. This model is determined adaptively based on “true sites” provided as input (typically HapMap 3 sites and those sites found to be polymorphic on the Omni 2.5M SNP chip array, for humans). This adaptive error model can then be applied to both known and novel variation discovered in the call set of interest to evaluate the probability that each call is real. The score that gets added to the INFO field of each variant is called the VQSLOD. It is the log odds ratio of being a true variant versus being false under the trained Gaussian mixture model.</p></li>
 </ul>
 <blockquote>
 <p><strong>Column names:</strong></p>
