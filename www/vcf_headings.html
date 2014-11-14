@@ -78,46 +78,44 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <p><strong>Column names:</strong></p>
 </blockquote>
 <ul>
-<li><strong>AB:</strong> Allele balance for each het genotype</li>
-<li><strong>AD:</strong> Allelic depths for the ref and alt alleles in the order listed</li>
-<li><strong>DP:</strong> Approximate read depth (reads with MQ=255 or with bad mates are filtered)</li>
-<li><strong>GQ:</strong> Genotype Quality</li>
-<li><strong>GT:</strong> Genotype</li>
-<li><strong>MQ0:</strong> Number of Mapping Quality Zero Reads per sample</li>
-<li><strong>PL:</strong> Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification</li>
-<li><strong>1000g2014aug_AA:</strong> 1000 genomes frequency - African</li>
-<li><strong>1000g2014aug_all:</strong> 1000 genomes frequency - all</li>
-<li><strong>1000g2014aug_EA:</strong> 1000 genomes frequency - European</li>
-<li><strong>esp6500si_aa:</strong> esp6500_aa frequency - African American</li>
-<li><strong>esp6500si_all:</strong> esp6500_all frequency - all</li>
-<li><strong>esp6500si_ea:</strong> esp6500_ea frequency - European American</li>
-<li><strong>GESP:</strong> genomesESP frequencies</li>
-<li><strong>DA:</strong> allelesDBSNP</li>
-<li><strong>DN:</strong> inDbSNP</li>
-<li><strong>snp132:</strong> snp132 ID</li>
-<li><strong>snp138:</strong> snp138 ID</li>
-<li><strong>AAC:</strong> amino acids</li>
-<li><strong>GL:</strong> gene name</li>
-<li><strong>FG:</strong> functionGVS</li>
-<li><strong>Func.refGene:</strong> gene function</li>
-<li><strong>QD:</strong> Variant Confidence/Quality by Depth“&gt;</li>
-<li><strong>VQSLOD:</strong> Log odds ratio of being a true variant versus being false under the trained gaussian mixture model</li>
-<li><strong>culprit:</strong> The annotation which was the worst performing in the Gaussian mixture model, likely the reason why the variant was filtered out</li>
-<li><strong>set:</strong> Family</li>
-<li><strong>pseudogenes:</strong> show if the variant is present (true), or absent (false) in the peseudogenes list</li>
-<li><strong>table 7:</strong> show if the variant is present (true), or absent (false) in the table 7 list</li>
-</ul>
-<blockquote>
-<p><strong>Summary Table:</strong></p>
-</blockquote>
-<ul>
+<li><strong>AB:</strong> Allele balance for each het genotype.</li>
+<li><strong>AD:</strong> Allelic depths for the ref and alt alleles in the order listed.</li>
+<li><strong>DP:</strong> Approximate read depth (reads with MQ=255 or with bad mates are filtered).</li>
+<li><strong>GQ:</strong> Genotype Quality.</li>
+<li><strong>GT:</strong> Genotype.</li>
+<li><strong>MQ0:</strong> Number of Mapping Quality Zero Reads per sample.</li>
+<li><strong>PL:</strong> Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification.</li>
+<li><strong>PH:</strong> PolyPhen score. The score is a number between 0 and 1, where 1 is the most damaging.</li>
+<li><strong>CP:</strong> Conservation Score phastCons (column scorePhastCons: UCSC, 46 placental mammalian species, range of 0 to 1, with 1 being the most conserved).</li>
+<li><strong>CG:</strong> Conservation Score GERP (column consScoreGERP: rejected-substitution score from the program GERP, Stanford University, range of -12.3 to 6.17, with 6.17 being the most conserved).</li>
+<li><strong>1000g2014aug_AA:</strong> 1000 genomes frequency - African.</li>
+<li><strong>1000g2014aug_all:</strong> 1000 genomes frequency - all.</li>
+<li><strong>1000g2014aug_EA:</strong> 1000 genomes frequency - European.</li>
+<li><strong>esp6500si_aa:</strong> esp6500_aa frequency - African American.</li>
+<li><strong>esp6500si_all:</strong> esp6500_all frequency - all.</li>
+<li><strong>esp6500si_ea:</strong> esp6500_ea frequency - European American.</li>
+<li><strong>GESP:</strong> genomesESP frequencies.</li>
+<li><strong>DA:</strong> allelesDBSNP.</li>
+<li><strong>DN:</strong> inDbSNP.</li>
+<li><strong>snp132:</strong> snp132 ID.</li>
+<li><strong>snp138:</strong> snp138 ID.</li>
+<li><strong>AAC:</strong> amino acids change.</li>
+<li><strong>GL:</strong> gene name.</li>
+<li><strong>FG:</strong> functionGVS.</li>
+<li><strong>Func.refGene:</strong> gene function.</li>
+<li><strong>QD:</strong> Variant Confidence/Quality by Depth“.</li>
+<li><strong>VQSLOD:</strong> Log odds ratio of being a true variant versus being false under the trained gaussian mixture model.</li>
+<li><strong>culprit:</strong> The annotation which was the worst performing in the Gaussian mixture model, likely the reason why the variant was filtered out.</li>
+<li><strong>set:</strong> Family.</li>
+<li><strong>brain_critical_region:</strong> If the SNP is in a brain critical region.</li>
+<li><p><strong>table 7:</strong> show if the variant is present (true), or absent (false) in the table 7 list. &gt; <strong>Summary Table:</strong></p></li>
 <li><strong>family:</strong> Family ID</li>
 <li><strong>ind:</strong> Individual ID</li>
 <li><strong>total:</strong> Total number of exonic, non-synonymous variants</li>
 <li><strong>rare:</strong> Variants from the total table where <code>esp6500si_all &lt; 0.01</code> and <code>1000g2014aug_all &lt; 0.01</code> or <code>NA</code></li>
 <li><strong>private:</strong> Variants from rare table where <code>esp6500si_all = NA</code> and <code>1000g2014aug_all = NA</code> and <code>snp132 = NA</code></li>
 <li><strong>shared rare:</strong> Variants from rare tables shared among individuals from the same family</li>
-<li><strong>shared unique:</strong> Variants from shared rare table that are unique for that family</li>
+<li><p><strong>shared unique:</strong> Variants from shared rare table that are unique for that family</p></li>
 </ul>
 
 
